@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Booking {
+  id           String   @id @default(cuid())
+  source       String   // "viator" | "getyourguide" | "civitatis" | "wordpress" | "manual"
+  guestName    String
+  guestEmail   String
+  tourName     String
+  date         DateTime
+  participants Int
+  status       String   @default("pending") // "pending" | "confirmed" | "refused"
+  notes        String?
+  externalRef  String?  // référence OTA
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+}

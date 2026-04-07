@@ -1,0 +1,21 @@
+# Dépendances
+node_modules/
+
+# Build Next.js
+.next/
+out/
+
+# Variables d'environnement (NE JAMAIS commit le .env !)
+.env
+.env.local
+.env.*.local
+
+# Prisma
+prisma/migrations/dev.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VSCode
+.vscode/
