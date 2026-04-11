@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import BookingCard, { type Booking } from "@/components/BookingCard";
 import PushSubscribe from "@/components/PushSubscribe";
+import { NATIONALITIES } from "@/lib/nationalities";
 
 type StatusFilter = "all" | "pending" | "confirmed" | "refused";
 type SortField = "date" | "guestName" | "tourName" | "participants" | "source";
@@ -367,6 +368,7 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
     date: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16),
     participants: "2",
     duration: "",
+    nationality: "",
     notes: "",
   });
 
@@ -441,6 +443,16 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
               <label className="text-xs text-slate-400 block mb-1">Participantes</label>
               <input type="number" min="1" value={form.participants} onChange={(e) => setForm({ ...form, participants: e.target.value })}
                 className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Nacionalidad (opcional)</label>
+              <select value={form.nationality} onChange={(e) => setForm({ ...form, nationality: e.target.value })}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
+                <option value="">— Sin especificar</option>
+                {NATIONALITIES.map(({ code, label }) => (
+                  <option key={code} value={code}>{label}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="text-xs text-slate-400 block mb-1">Duración (opcional)</label>

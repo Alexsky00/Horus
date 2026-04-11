@@ -1,4 +1,15 @@
 "use client";
+import { getNationalityLabel } from "@/lib/nationalities";
+
+export function Flag({ code, size = "1rem" }: { code: string; size?: string }) {
+  return (
+    <span
+      className={`fi fi-${code.toLowerCase()}`}
+      title={getNationalityLabel(code)}
+      style={{ fontSize: size, borderRadius: 2, display: "inline-block" }}
+    />
+  );
+}
 
 export type Booking = {
   id: string;
@@ -9,6 +20,7 @@ export type Booking = {
   date: string;
   participants: number;
   duration: number | null;
+  nationality: string | null;
   status: string;
   notes: string | null;
   externalRef: string | null;
@@ -78,7 +90,7 @@ export default function BookingCard({
         )}
       </p>
       <p className="text-slate-300 text-sm mt-1">
-        {booking.guestName} — <a href={`mailto:${booking.guestEmail}`} className="text-amber-400 hover:underline">{booking.guestEmail}</a>
+        {booking.guestName}{booking.nationality && <Flag code={booking.nationality} size="1.1rem" />} — <a href={`mailto:${booking.guestEmail}`} className="text-amber-400 hover:underline">{booking.guestEmail}</a>
       </p>
       {booking.notes && <p className="text-slate-500 text-xs mt-1 italic">{booking.notes}</p>}
 

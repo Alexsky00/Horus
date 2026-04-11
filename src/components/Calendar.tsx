@@ -3,8 +3,10 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import type FullCalendarType from "@fullcalendar/react";
 import type { Booking } from "./BookingCard";
+import { Flag } from "./BookingCard";
 
 const STATUS_COLOR: Record<string, string> = {
   pending:   "#f59e0b",
@@ -26,13 +28,15 @@ export default function Calendar({
   bookings: Booking[];
   onBookingClick: (booking: Booking) => void;
 }) {
-  const [view, setView] = useState<View>("month");
+  const [view, setView] = useState<View>("week");
   const [current, setCurrent] = useState(() => {
     const d = new Date();
     return { year: d.getFullYear(), month: d.getMonth() }; // month 0-indexed
   });
   // Date de référence pour les vues FullCalendar semaine/jour
   const [fcDate, setFcDate] = useState<Date>(new Date());
+  const [fcTitle, setFcTitle] = useState<string>("");
+  const fcRef = useRef<FullCalendarType>(null);
 
   function prevMonth() {
     setCurrent((c) =>
@@ -44,16 +48,35 @@ export default function Calendar({
       c.month === 11 ? { year: c.year + 1, month: 0 } : { year: c.year, month: c.month + 1 }
     );
   }
+  function fcPrev() { fcRef.current?.getApi().prev(); }
+  function fcNext() { fcRef.current?.getApi().next(); }
   function goToday() {
     const d = new Date();
     setCurrent({ year: d.getFullYear(), month: d.getMonth() });
     setFcDate(d);
+    fcRef.current?.getApi().today();
   }
 
   // Clic sur un jour → passer en vue jour
   function handleDayClick(date: Date) {
-    setFcDate(date);
-    setView("day");
+    if (fcRef.current) {
+      // FullCalendar déjà monté (depuis vue semaine) → changer via API
+      const api = fcRef.current.getApi();
+      api.gotoDate(date);
+      api.changeView("timeGridDay");
+      setView("day");
+    } else {
+      // Depuis la vue mois → FullCalendar va se monter avec initialDate/initialView
+      setFcDate(date);
+      setView("day");
+    }
+  }
+
+  function switchFcView(v: View) {
+    setView(v);
+    if (v !== "month" && fcRef.current) {
+      fcRef.current.getApi().changeView(v === "week" ? "timeGridWeek" : "timeGridDay");
+    }
   }
 
   const MONTHS_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -63,16 +86,16 @@ export default function Calendar({
   const toolbar = (
     <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
       <div className="flex items-center gap-2">
-        <button onClick={() => { if (view === "month") prevMonth(); }} className="px-2 py-1 text-slate-400 hover:text-white disabled:opacity-0" disabled={view !== "month"}>‹</button>
-        <span className="text-white font-medium text-sm min-w-32 text-center">
-          {view === "month" ? `${MONTHS_ES[current.month]} ${current.year}` : ""}
+        <button onClick={() => view === "month" ? prevMonth() : fcPrev()} className="w-8 h-8 flex items-center justify-center rounded bg-slate-700 hover:bg-slate-500 text-white font-bold text-base transition-colors">‹</button>
+        <span className="text-white font-semibold text-sm min-w-36 text-center">
+          {view === "month" ? `${MONTHS_ES[current.month]} ${current.year}` : fcTitle}
         </span>
-        <button onClick={() => { if (view === "month") nextMonth(); }} className="px-2 py-1 text-slate-400 hover:text-white disabled:opacity-0" disabled={view !== "month"}>›</button>
-        <button onClick={goToday} className="text-xs px-2.5 py-1 border border-slate-600 rounded text-slate-400 hover:border-slate-400 ml-1">Hoy</button>
+        <button onClick={() => view === "month" ? nextMonth() : fcNext()} className="w-8 h-8 flex items-center justify-center rounded bg-slate-700 hover:bg-slate-500 text-white font-bold text-base transition-colors">›</button>
+        <button onClick={goToday} className="text-xs px-3 py-1.5 bg-slate-700 hover:bg-slate-500 rounded text-white font-medium transition-colors ml-1">Hoy</button>
       </div>
       <div className="flex gap-1">
         {(["month","week","day"] as View[]).map((v) => (
-          <button key={v} onClick={() => setView(v)}
+          <button key={v} onClick={() => switchFcView(v)}
             className={`text-xs px-3 py-1 rounded border transition-colors ${view === v ? "bg-amber-500 border-amber-500 text-black font-medium" : "border-slate-600 text-slate-400 hover:border-slate-400"}`}>
             {v === "month" ? "Mes" : v === "week" ? "Semana" : "Día"}
           </button>
@@ -91,12 +114,14 @@ export default function Calendar({
       backgroundColor: STATUS_COLOR[b.status] ?? "#64748b",
       borderColor:     STATUS_COLOR[b.status] ?? "#64748b",
       textColor: b.status === "pending" ? "#000" : "#fff",
+      extendedProps: { nationality: b.nationality },
     }));
 
     return (
       <div>
         {toolbar}
         <FullCalendar
+          ref={fcRef}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView={view === "week" ? "timeGridWeek" : "timeGridDay"}
           initialDate={fcDate}
@@ -113,10 +138,14 @@ export default function Calendar({
           slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
           eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
           headerToolbar={false}
+          datesSet={(info) => setFcTitle(info.view.title)}
           eventContent={(arg) => (
-            <div className="px-1 py-0.5 text-xs leading-tight truncate cursor-pointer">
-              <span className="font-semibold">{arg.timeText} </span>
-              <span className="opacity-90">{arg.event.title}</span>
+            <div className="px-1 py-0.5 text-xs leading-tight cursor-pointer flex items-center gap-1">
+              <span className="font-semibold shrink-0">{arg.timeText}</span>
+              <span className="opacity-90 truncate">{arg.event.title}</span>
+              {arg.event.extendedProps.nationality && (
+                <Flag code={arg.event.extendedProps.nationality} size="0.9rem" />
+              )}
             </div>
           )}
         />
@@ -296,7 +325,7 @@ export default function Calendar({
                   <div
                     key={b.id + "-" + mode}
                     onClick={(e) => { e.stopPropagation(); onBookingClick(b); }}
-                    title={`${timeStr} — ${b.tourName} (${b.guestName})${mode === "start" ? " → suite demain" : ""}`}
+                    title={`${timeStr} — ${b.tourName} (${b.guestName})${b.nationality ? " " + b.nationality : ""}${mode === "start" ? " → suite demain" : ""}`}
                     style={{
                       top,
                       left:            `${leftPct}%`,
@@ -316,7 +345,7 @@ export default function Calendar({
                         : { left: "2px", color: textColor }),            // dans la barre
                       fontSize: 9, fontWeight: 700, lineHeight: 1, whiteSpace: "nowrap",
                     }}>
-                      {timeStr}{mode === "start" ? "→" : ""}
+                      {timeStr}{mode === "start" ? "→" : ""}{!isLate && b.nationality && <Flag code={b.nationality} size="0.75rem" />}
                     </span>
                   </div>
                 );

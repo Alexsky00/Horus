@@ -16,6 +16,7 @@ model Booking {
   date         DateTime
   participants Int
   duration     Int?     // durée en minutes (ex: 180 = 3h)
+  nationality  String?  // ex: "🇫🇷 Francia"
   status       String   @default("pending") // "pending" | "confirmed" | "refused"
   notes        String?
   externalRef  String?  // référence OTA

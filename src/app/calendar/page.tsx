@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import type { Booking } from "@/components/BookingCard";
+import { type Booking, Flag } from "@/components/BookingCard";
 
 const FullCalendarComponent = dynamic(() => import("@/components/Calendar"), { ssr: false });
 
@@ -116,7 +116,10 @@ export default function CalendarPage() {
             <div className="space-y-1.5 text-sm mb-3">
               <div className="flex gap-2">
                 <span className="text-slate-500 w-24 flex-shrink-0">Cliente</span>
-                <span className="text-slate-200">{selected.guestName}</span>
+                <span className="text-slate-200">
+                  {selected.guestName}
+                  {selected.nationality && <span className="ml-2"><Flag code={selected.nationality} size="1.2rem" /></span>}
+                </span>
               </div>
               <div className="flex gap-2">
                 <span className="text-slate-500 w-24 flex-shrink-0">Email</span>
