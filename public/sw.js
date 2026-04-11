@@ -36,13 +36,13 @@ self.addEventListener("push", (event) => {
   const data = event.data?.json() ?? {};
   const title = data.title ?? "Horus";
   const options = {
-    body: data.body ?? "Nouvelle réservation reçue",
+    body: data.body ?? "Nueva reserva recibida",
     icon: "/icons/icon-192.png",
     badge: "/icons/icon-192.png",
     data: { url: data.url ?? "/" },
     actions: [
-      { action: "open", title: "Voir" },
-      { action: "close", title: "Ignorer" },
+      { action: "open", title: "Ver" },
+      { action: "close", title: "Ignorar" },
     ],
   };
   event.waitUntil(self.registration.showNotification(title, options));

@@ -8,6 +8,7 @@ export type Booking = {
   tourName: string;
   date: string;
   participants: number;
+  duration: number | null;
   status: string;
   notes: string | null;
   externalRef: string | null;
@@ -30,13 +31,21 @@ const STATUS_STYLES: Record<string, string> = {
 export default function BookingCard({
   booking,
   onAction,
+  onDelete,
 }: {
   booking: Booking;
   onAction: (id: string, status: "confirmed" | "refused") => void;
+  onDelete: (id: string) => void;
 }) {
   const date = new Date(booking.date);
-  const dateStr = date.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
-  const timeStr = date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const dateStr = date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
+  const timeStr = date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+
+  function handleDelete() {
+    if (confirm(`¿Eliminar la reserva de ${booking.guestName}?`)) {
+      onDelete(booking.id);
+    }
+  }
 
   return (
     <div className={`bg-slate-800 rounded-lg p-4 border-l-4 ${STATUS_STYLES[booking.status] ?? "border-slate-600"}`}>
@@ -49,12 +58,24 @@ export default function BookingCard({
             <span className="ml-2 text-xs text-slate-500">{booking.externalRef}</span>
           )}
         </div>
-        <StatusBadge status={booking.status} />
+        <div className="flex items-center gap-2">
+          <StatusBadge status={booking.status} />
+          <button
+            onClick={handleDelete}
+            title="Eliminar reserva"
+            className="text-slate-600 hover:text-red-400 transition-colors text-sm leading-none"
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
       <h3 className="font-semibold text-white">{booking.tourName}</h3>
       <p className="text-slate-400 text-sm">
-        {dateStr} à {timeStr} · {booking.participants} pers.
+        {dateStr} a las {timeStr} · {booking.participants} pers.
+        {booking.duration && (
+          <span className="ml-2 text-slate-500">· {formatDuration(booking.duration)}</span>
+        )}
       </p>
       <p className="text-slate-300 text-sm mt-1">
         {booking.guestName} — <a href={`mailto:${booking.guestEmail}`} className="text-amber-400 hover:underline">{booking.guestEmail}</a>
@@ -67,13 +88,13 @@ export default function BookingCard({
             onClick={() => onAction(booking.id, "confirmed")}
             className="flex-1 bg-green-600 hover:bg-green-500 text-white text-sm font-medium py-1.5 rounded"
           >
-            ✓ Accepter
+            ✓ Aceptar
           </button>
           <button
             onClick={() => onAction(booking.id, "refused")}
             className="flex-1 bg-red-700 hover:bg-red-600 text-white text-sm font-medium py-1.5 rounded"
           >
-            ✗ Refuser
+            ✗ Rechazar
           </button>
         </div>
       )}
@@ -81,11 +102,20 @@ export default function BookingCard({
   );
 }
 
+function formatDuration(minutes: number): string {
+  if (minutes === 780) return "Día completo (8h–21h)";
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}min`;
+  if (m === 0) return `${h}h`;
+  return `${h}h${m}`;
+}
+
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
-    pending: { label: "En attente", cls: "bg-amber-500/20 text-amber-300" },
-    confirmed: { label: "Confirmée", cls: "bg-green-500/20 text-green-300" },
-    refused: { label: "Refusée", cls: "bg-red-500/20 text-red-400" },
+    pending: { label: "Pendiente", cls: "bg-amber-500/20 text-amber-300" },
+    confirmed: { label: "Confirmada", cls: "bg-green-500/20 text-green-300" },
+    refused: { label: "Rechazada", cls: "bg-red-500/20 text-red-400" },
   };
   const s = map[status] ?? { label: status, cls: "bg-slate-600 text-slate-300" };
   return <span className={`text-xs px-2 py-0.5 rounded-full ${s.cls}`}>{s.label}</span>;

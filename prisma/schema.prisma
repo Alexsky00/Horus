@@ -15,11 +15,20 @@ model Booking {
   tourName     String
   date         DateTime
   participants Int
+  duration     Int?     // durée en minutes (ex: 180 = 3h)
   status       String   @default("pending") // "pending" | "confirmed" | "refused"
   notes        String?
   externalRef  String?  // référence OTA
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model Log {
+  id        String   @id @default(cuid())
+  action    String   // "created" | "confirmed" | "refused" | "deleted"
+  bookingId String?
+  details   String   // résumé lisible
+  createdAt DateTime @default(now())
 }
 
 model PushSubscription {

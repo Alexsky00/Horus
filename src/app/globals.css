@@ -38,3 +38,16 @@ body {
   border-color: var(--accent) !important;
   color: #000 !important;
 }
+
+.fc .fc-timegrid-slot-label {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.fc .fc-timegrid-now-indicator-line {
+  border-color: #f59e0b;
+}
+
+.fc .fc-timegrid-now-indicator-arrow {
+  border-top-color: #f59e0b;
+}

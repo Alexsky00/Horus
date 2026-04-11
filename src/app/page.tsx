@@ -1,26 +1,49 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import BookingCard, { type Booking } from "@/components/BookingCard";
 import PushSubscribe from "@/components/PushSubscribe";
 
-type Filter = "all" | "pending" | "confirmed" | "refused";
+type StatusFilter = "all" | "pending" | "confirmed" | "refused";
+type SortField = "date" | "guestName" | "tourName" | "participants" | "source";
+type SortDir = "asc" | "desc";
+
+const SOURCES = ["viator", "getyourguide", "civitatis", "wordpress", "manual"];
+const PAGE_SIZE = 15;
 
 export default function Dashboard() {
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [filter, setFilter] = useState<Filter>("pending");
   const [loading, setLoading] = useState(true);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Filtres
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
+  // Tri
+  const [sortField, setSortField] = useState<SortField>("date");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  // Pagination
+  const [page, setPage] = useState(1);
 
   const fetchBookings = useCallback(async () => {
     setLoading(true);
-    const params = filter !== "all" ? `?status=${filter}` : "";
-    const res = await fetch(`/api/bookings${params}`);
+    const res = await fetch("/api/bookings");
     const data = await res.json();
     setBookings(data);
     setLoading(false);
-  }, [filter]);
+  }, []);
 
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
+
+  async function handleDelete(id: string) {
+    await fetch(`/api/bookings/${id}`, { method: "DELETE" });
+    fetchBookings();
+  }
 
   async function handleAction(id: string, status: "confirmed" | "refused") {
     setActionError(null);
@@ -31,48 +54,202 @@ export default function Dashboard() {
     });
     if (!res.ok) {
       const err = await res.json();
-      setActionError(err.error ?? "Erreur");
+      setActionError(err.error ?? "Error");
       return;
     }
     fetchBookings();
   }
 
-  const pending = bookings.filter((b) => b.status === "pending").length;
+  function toggleSort(field: SortField) {
+    if (sortField === field) setSortDir((d) => d === "asc" ? "desc" : "asc");
+    else { setSortField(field); setSortDir("asc"); }
+  }
+
+  // Remet à la page 1 à chaque changement de filtre/tri
+  useEffect(() => { setPage(1); }, [statusFilter, sourceFilter, search, dateFrom, dateTo, sortField, sortDir]);
+
+  function resetFilters() {
+    setStatusFilter("all");
+    setSourceFilter("all");
+    setSearch("");
+    setDateFrom("");
+    setDateTo("");
+    setSortField("date");
+    setSortDir("asc");
+    setPage(1);
+  }
+
+  // Filtrage + tri côté client
+  const displayed = useMemo(() => {
+    let list = [...bookings];
+
+    if (statusFilter !== "all") list = list.filter((b) => b.status === statusFilter);
+    if (sourceFilter !== "all") list = list.filter((b) => b.source === sourceFilter);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((b) =>
+        b.guestName.toLowerCase().includes(q) ||
+        b.tourName.toLowerCase().includes(q) ||
+        b.guestEmail.toLowerCase().includes(q)
+      );
+    }
+    if (dateFrom) list = list.filter((b) => new Date(b.date) >= new Date(dateFrom));
+    if (dateTo)   list = list.filter((b) => new Date(b.date) <= new Date(dateTo + "T23:59:59"));
+
+    list.sort((a, b) => {
+      let va: string | number, vb: string | number;
+      if (sortField === "date")         { va = new Date(a.date).getTime(); vb = new Date(b.date).getTime(); }
+      else if (sortField === "participants") { va = a.participants; vb = b.participants; }
+      else { va = (a[sortField] as string).toLowerCase(); vb = (b[sortField] as string).toLowerCase(); }
+      return sortDir === "asc" ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
+    });
+
+    return list;
+  }, [bookings, statusFilter, sourceFilter, search, dateFrom, dateTo, sortField, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(displayed.length / PAGE_SIZE));
+  const paginated  = displayed.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const pending   = bookings.filter((b) => b.status === "pending").length;
   const confirmed = bookings.filter((b) => b.status === "confirmed").length;
+  const activeFiltersCount = [
+    statusFilter !== "all", sourceFilter !== "all",
+    search, dateFrom, dateTo,
+    sortField !== "date" || sortDir !== "asc",
+  ].filter(Boolean).length;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PushSubscribe />
 
-      {/* Stats rapides */}
+      {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
-        <Stat label="En attente" value={pending} color="text-amber-400" />
-        <Stat label="Confirmées" value={confirmed} color="text-green-400" />
-        <Stat label="Total" value={bookings.length} color="text-slate-300" />
+        <Stat label="Pendientes" value={pending} color="text-amber-400" onClick={() => setStatusFilter("pending")} />
+        <Stat label="Confirmadas" value={confirmed} color="text-green-400" onClick={() => setStatusFilter("confirmed")} />
+        <Stat label="Total" value={bookings.length} color="text-slate-300" onClick={() => setStatusFilter("all")} />
       </div>
 
-      {/* Filtres */}
-      <div className="flex gap-2 flex-wrap">
-        {(["pending", "all", "confirmed", "refused"] as Filter[]).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`text-sm px-3 py-1.5 rounded-full border transition-colors ${
-              filter === f
-                ? "bg-amber-500 border-amber-500 text-black font-medium"
-                : "border-slate-600 text-slate-400 hover:border-slate-400"
-            }`}
-          >
-            {f === "all" ? "Toutes" : f === "pending" ? "En attente" : f === "confirmed" ? "Confirmées" : "Refusées"}
-          </button>
-        ))}
+      {/* Barre de contrôle */}
+      <div className="flex gap-2 items-center flex-wrap">
+        {/* Recherche */}
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar cliente, tour..."
+          className="flex-1 min-w-36 bg-slate-800 border border-slate-600 rounded-full px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+        />
+
+        {/* Bouton filtres */}
         <button
-          onClick={fetchBookings}
-          className="ml-auto text-sm px-3 py-1.5 rounded-full border border-slate-600 text-slate-400 hover:border-slate-400"
+          onClick={() => setFiltersOpen(!filtersOpen)}
+          className={`text-sm px-3 py-1.5 rounded-full border transition-colors flex items-center gap-1.5 ${
+            activeFiltersCount > 0
+              ? "bg-amber-500/20 border-amber-500 text-amber-300"
+              : "border-slate-600 text-slate-400 hover:border-slate-400"
+          }`}
         >
-          ↻ Rafraîchir
+          Filtros {activeFiltersCount > 0 && <span className="bg-amber-500 text-black text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">{activeFiltersCount}</span>}
+        </button>
+
+        {/* Actualizar */}
+        <button onClick={fetchBookings} className="text-sm px-3 py-1.5 rounded-full border border-slate-600 text-slate-400 hover:border-slate-400">
+          ↻
         </button>
       </div>
+
+      {/* Panneau filtres + tri */}
+      {filtersOpen && (
+        <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {/* Statut */}
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Estado</label>
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
+                <option value="all">Todos</option>
+                <option value="pending">Pendiente</option>
+                <option value="confirmed">Confirmada</option>
+                <option value="refused">Rechazada</option>
+              </select>
+            </div>
+
+            {/* Source */}
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Plataforma</label>
+              <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
+                <option value="all">Todas</option>
+                {SOURCES.map((s) => (
+                  <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Date desde */}
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Fecha desde</label>
+              <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
+            </div>
+
+            {/* Date hasta */}
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Fecha hasta</label>
+              <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
+            </div>
+
+            {/* Ordenar por */}
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Ordenar por</label>
+              <select value={sortField} onChange={(e) => setSortField(e.target.value as SortField)}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
+                <option value="date">Fecha</option>
+                <option value="guestName">Cliente</option>
+                <option value="tourName">Tour</option>
+                <option value="participants">Participantes</option>
+                <option value="source">Plataforma</option>
+              </select>
+            </div>
+
+            {/* Direction */}
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Dirección</label>
+              <div className="flex gap-2">
+                <button onClick={() => setSortDir("asc")}
+                  className={`flex-1 text-sm py-1.5 rounded border transition-colors ${sortDir === "asc" ? "bg-amber-500 border-amber-500 text-black font-medium" : "border-slate-600 text-slate-400"}`}>
+                  ↑ Asc
+                </button>
+                <button onClick={() => setSortDir("desc")}
+                  className={`flex-1 text-sm py-1.5 rounded border transition-colors ${sortDir === "desc" ? "bg-amber-500 border-amber-500 text-black font-medium" : "border-slate-600 text-slate-400"}`}>
+                  ↓ Desc
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-xs text-slate-500">{displayed.length} reserva(s) mostrada(s)</span>
+            <button onClick={resetFilters} className="text-xs text-slate-400 hover:text-amber-400">
+              Restablecer filtros
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Tri rapide par colonnes */}
+      {!filtersOpen && (
+        <div className="flex gap-2 flex-wrap text-xs text-slate-500">
+          <span>Ordenar:</span>
+          {([["date","Fecha"],["guestName","Cliente"],["tourName","Tour"],["participants","Pers."]] as [SortField,string][]).map(([f, label]) => (
+            <button key={f} onClick={() => toggleSort(f)}
+              className={`hover:text-slate-300 transition-colors ${sortField === f ? "text-amber-400 font-medium" : ""}`}>
+              {label} {sortField === f ? (sortDir === "asc" ? "↑" : "↓") : ""}
+            </button>
+          ))}
+          <span className="ml-auto text-slate-600">{displayed.length} resultado(s)</span>
+        </div>
+      )}
 
       {actionError && (
         <div className="bg-red-900/40 border border-red-700 text-red-300 rounded px-4 py-2 text-sm">
@@ -80,154 +257,230 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Liste des réservations */}
+      {/* Lista */}
       {loading ? (
-        <p className="text-slate-500 text-center py-8">Chargement...</p>
-      ) : bookings.length === 0 ? (
+        <p className="text-slate-500 text-center py-8">Cargando...</p>
+      ) : displayed.length === 0 ? (
         <div className="text-center py-12 text-slate-500">
           <p className="text-4xl mb-3">📭</p>
-          <p>Aucune réservation {filter !== "all" ? `avec le statut "${filter}"` : ""}</p>
-          <p className="text-xs mt-2">Simule une réservation avec le bouton ci-dessous</p>
+          <p>Sin reservas con estos filtros</p>
+          <button onClick={resetFilters} className="text-xs text-amber-400 mt-2 hover:underline">
+            Restablecer filtros
+          </button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {bookings.map((b) => (
-            <BookingCard key={b.id} booking={b} onAction={handleAction} />
-          ))}
-        </div>
+        <>
+          <div className="space-y-3">
+            {paginated.map((b) => (
+              <BookingCard key={b.id} booking={b} onAction={handleAction} onDelete={handleDelete} />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-xs text-slate-500">
+                {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, displayed.length)} de {displayed.length} reservas
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setPage(1)}
+                  disabled={page === 1}
+                  className="px-2 py-1 text-xs rounded border border-slate-600 text-slate-400 hover:border-slate-400 disabled:opacity-30"
+                >
+                  «
+                </button>
+                <button
+                  onClick={() => setPage((p) => p - 1)}
+                  disabled={page === 1}
+                  className="px-2 py-1 text-xs rounded border border-slate-600 text-slate-400 hover:border-slate-400 disabled:opacity-30"
+                >
+                  ‹
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                  .reduce<(number | "…")[]>((acc, p, i, arr) => {
+                    if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push("…");
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, i) =>
+                    p === "…" ? (
+                      <span key={`ellipsis-${i}`} className="px-2 text-xs text-slate-600">…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => setPage(p as number)}
+                        className={`px-2.5 py-1 text-xs rounded border transition-colors ${
+                          page === p
+                            ? "bg-amber-500 border-amber-500 text-black font-medium"
+                            : "border-slate-600 text-slate-400 hover:border-slate-400"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+                <button
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={page === totalPages}
+                  className="px-2 py-1 text-xs rounded border border-slate-600 text-slate-400 hover:border-slate-400 disabled:opacity-30"
+                >
+                  ›
+                </button>
+                <button
+                  onClick={() => setPage(totalPages)}
+                  disabled={page === totalPages}
+                  className="px-2 py-1 text-xs rounded border border-slate-600 text-slate-400 hover:border-slate-400 disabled:opacity-30"
+                >
+                  »
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Simulation OTA rapide */}
       <SimulateOTA onCreated={fetchBookings} />
     </div>
   );
 }
 
-function Stat({ label, value, color }: { label: string; value: number; color: string }) {
+function Stat({ label, value, color, onClick }: { label: string; value: number; color: string; onClick: () => void }) {
   return (
-    <div className="bg-slate-800 rounded-lg p-3 border border-slate-700 text-center">
+    <button onClick={onClick} className="bg-slate-800 rounded-lg p-3 border border-slate-700 text-center w-full hover:border-slate-500 transition-colors">
       <div className={`text-2xl font-bold ${color}`}>{value}</div>
       <div className="text-slate-400 text-xs mt-0.5">{label}</div>
-    </div>
+    </button>
   );
 }
 
 function SimulateOTA({ onCreated }: { onCreated: () => void }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     source: "viator",
-    guestName: "Jean Martin",
-    guestEmail: "jean@example.com",
-    tourName: "Randonnée Bardenas",
+    guestName: "Juan García",
+    guestEmail: "juan@example.com",
+    tourName: "Bardenas Reales",
     date: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16),
     participants: "2",
+    duration: "",
     notes: "",
   });
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    await fetch("/api/bookings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, participants: Number(form.participants) }),
-    });
-    setLoading(false);
-    setOpen(false);
-    onCreated();
+    setError(null);
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, participants: Number(form.participants), duration: form.duration ? Number(form.duration) : null }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? `Error ${res.status} — comprueba que la base de datos está conectada`);
+        return;
+      }
+      setOpen(false);
+      onCreated();
+    } catch {
+      setError("No se puede conectar con el servidor. ¿Está corriendo npm run dev?");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div className="border-t border-slate-700 pt-4">
-      <button
-        onClick={() => setOpen(!open)}
-        className="text-sm text-slate-400 hover:text-amber-400"
-      >
-        + Simuler une réservation OTA
+      <button onClick={() => setOpen(!open)} className="text-sm text-slate-400 hover:text-amber-400">
+        + Simular una reserva OTA
       </button>
 
       {open && (
         <form onSubmit={submit} className="mt-3 bg-slate-800 rounded-lg p-4 border border-slate-700 space-y-3">
+          {error && (
+            <div className="bg-red-900/40 border border-red-700 text-red-300 rounded px-3 py-2 text-xs">⚠ {error}</div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-slate-400 block mb-1">Source</label>
-              <select
-                value={form.source}
-                onChange={(e) => setForm({ ...form, source: e.target.value })}
-                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white"
-              >
+              <label className="text-xs text-slate-400 block mb-1">Plataforma</label>
+              <select value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
                 <option value="viator">Viator</option>
                 <option value="getyourguide">GetYourGuide</option>
                 <option value="civitatis">Civitatis</option>
                 <option value="wordpress">WordPress</option>
-                <option value="manual">Manuel</option>
+                <option value="manual">Manual</option>
               </select>
             </div>
             <div>
-              <label className="text-xs text-slate-400 block mb-1">Tour</label>
-              <input
-                value={form.tourName}
-                onChange={(e) => setForm({ ...form, tourName: e.target.value })}
-                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white"
-              />
+              <label className="text-xs text-slate-400 block mb-1">Tour / Excursión</label>
+              <input value={form.tourName} onChange={(e) => setForm({ ...form, tourName: e.target.value })}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
             </div>
             <div>
-              <label className="text-xs text-slate-400 block mb-1">Nom du client</label>
-              <input
-                value={form.guestName}
-                onChange={(e) => setForm({ ...form, guestName: e.target.value })}
-                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white"
-              />
+              <label className="text-xs text-slate-400 block mb-1">Nombre del cliente</label>
+              <input value={form.guestName} onChange={(e) => setForm({ ...form, guestName: e.target.value })}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
             </div>
             <div>
               <label className="text-xs text-slate-400 block mb-1">Email</label>
-              <input
-                type="email"
-                value={form.guestEmail}
-                onChange={(e) => setForm({ ...form, guestEmail: e.target.value })}
-                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white"
-              />
+              <input type="email" value={form.guestEmail} onChange={(e) => setForm({ ...form, guestEmail: e.target.value })}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
             </div>
             <div>
-              <label className="text-xs text-slate-400 block mb-1">Date & heure</label>
-              <input
-                type="datetime-local"
-                value={form.date}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
-                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white"
-              />
+              <label className="text-xs text-slate-400 block mb-1">Fecha y hora</label>
+              <input type="datetime-local" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
             </div>
             <div>
-              <label className="text-xs text-slate-400 block mb-1">Participants</label>
-              <input
-                type="number"
-                min="1"
-                value={form.participants}
-                onChange={(e) => setForm({ ...form, participants: e.target.value })}
-                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white"
-              />
+              <label className="text-xs text-slate-400 block mb-1">Participantes</label>
+              <input type="number" min="1" value={form.participants} onChange={(e) => setForm({ ...form, participants: e.target.value })}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Duración (opcional)</label>
+              <select value={form.duration} onChange={(e) => {
+                const val = e.target.value;
+                if (val === "780") {
+                  // Día completo → forcer 08:00
+                  const d = form.date.slice(0, 10);
+                  setForm({ ...form, duration: val, date: `${d}T08:00` });
+                } else {
+                  setForm({ ...form, duration: val });
+                }
+              }}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
+                <option value="">— Sin especificar</option>
+                <option value="60">1h</option>
+                <option value="90">1h30</option>
+                <option value="120">2h</option>
+                <option value="150">2h30</option>
+                <option value="180">3h</option>
+                <option value="240">4h</option>
+                <option value="300">5h</option>
+                <option value="360">6h</option>
+                <option value="780">Día completo (8h–21h)</option>
+              </select>
             </div>
           </div>
           <div>
-            <label className="text-xs text-slate-400 block mb-1">Notes (optionnel)</label>
-            <input
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            <label className="text-xs text-slate-400 block mb-1">Notas (opcional)</label>
+            <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })}
               className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white"
-              placeholder="Ex: végétariens, enfants..."
-            />
+              placeholder="Ej: vegetarianos, niños..." />
           </div>
           <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-amber-500 hover:bg-amber-400 text-black text-sm font-medium px-4 py-1.5 rounded disabled:opacity-50"
-            >
-              {loading ? "..." : "Créer la réservation"}
+            <button type="submit" disabled={loading}
+              className="bg-amber-500 hover:bg-amber-400 text-black text-sm font-medium px-4 py-1.5 rounded disabled:opacity-50">
+              {loading ? "..." : "Crear reserva"}
             </button>
             <button type="button" onClick={() => setOpen(false)} className="text-slate-400 text-sm px-3 py-1.5">
-              Annuler
+              Cancelar
             </button>
           </div>
         </form>

@@ -1,7 +1,7 @@
 {
-  "name": "Horus - Gestion Réservations",
+  "name": "Horus - Gestión de Reservas",
   "short_name": "Horus",
-  "description": "Système de gestion des réservations touristiques",
+  "description": "Sistema de gestión de reservas turísticas",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",

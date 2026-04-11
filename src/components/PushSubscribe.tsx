@@ -59,7 +59,7 @@ export default function PushSubscribe() {
     await fetch("/api/push/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: "Test Horus", body: "Les notifications fonctionnent !" }),
+      body: JSON.stringify({ title: "Test Horus", body: "¡Las notificaciones funcionan!" }),
     });
   }
 
@@ -67,26 +67,26 @@ export default function PushSubscribe() {
 
   return (
     <div className="bg-slate-800 rounded-lg p-4 border border-slate-700 flex flex-wrap items-center gap-3">
-      <span className="text-slate-300 text-sm">Notifications Android :</span>
+      <span className="text-slate-300 text-sm">Notificaciones Android:</span>
       {state === "subscribed" ? (
         <>
-          <span className="text-green-400 text-sm font-medium">✓ Activées</span>
+          <span className="text-green-400 text-sm font-medium">✓ Activadas</span>
           <button onClick={sendTest} className="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-slate-300">
-            Tester
+            Probar
           </button>
           <button onClick={unsubscribe} className="text-xs text-slate-500 hover:text-red-400">
-            Désactiver
+            Desactivar
           </button>
         </>
       ) : state === "denied" ? (
-        <span className="text-red-400 text-sm">Accès refusé — active les notifs dans les réglages du navigateur</span>
+        <span className="text-red-400 text-sm">Acceso denegado — activa las notificaciones en los ajustes del navegador</span>
       ) : (
         <button
           onClick={subscribe}
           disabled={loading}
           className="text-xs bg-amber-500 hover:bg-amber-400 text-black px-3 py-1 rounded font-medium disabled:opacity-50"
         >
-          {loading ? "..." : "Activer les notifications"}
+          {loading ? "..." : "Activar notificaciones"}
         </button>
       )}
     </div>
