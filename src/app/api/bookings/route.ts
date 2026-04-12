@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
 // POST /api/bookings — crée une nouvelle réservation (depuis simulation OTA ou formulaire)
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { source, guestName, guestEmail, tourName, date, participants, duration, nationality, notes, externalRef } = body;
+  const { source, guestName, guestEmail, tourName, date, participants, duration, nationality, routeType, allDay, notes, externalRef } = body;
 
   if (!source || !guestName || !guestEmail || !tourName || !date || !participants) {
     return NextResponse.json({ error: "Faltan campos obligatorios (source, guestName, guestEmail, tourName, date, participants)" }, { status: 400 });
@@ -58,14 +58,27 @@ export async function POST(req: NextRequest) {
   const conflict = confirmedThatDay.find((b) => {
     const bStart = b.date.getTime();
     const bEnd = bStart + (b.duration ?? 0) * 60_000;
-
-    if (newDuration === 0 && (b.duration ?? 0) === 0) {
-      // Aucune durée des deux côtés → conflit si même heure exacte
-      return bStart === newStart;
-    }
-    // Chevauchement générique : les créneaux se croisent
+    if (newDuration === 0 && (b.duration ?? 0) === 0) return bStart === newStart;
     return newStart < (bEnd || bStart + 1) && (newEnd || newStart + 1) > bStart;
   }) ?? null;
+
+  // Vérifier aussi les créneaux bloqués
+  const blockedThatDay = await prisma.blockedSlot.findMany({
+    where: { date: { gte: dayStart, lte: dayEnd } },
+  });
+  const blockedConflict = blockedThatDay.find((bl) => {
+    if (bl.allDay) return true;
+    const blStart = bl.date.getTime();
+    const blEnd = blStart + (bl.duration ?? 0) * 60_000;
+    return newStart < (blEnd || blStart + 1) && (newEnd || newStart + 1) > blStart;
+  }) ?? null;
+
+  if (blockedConflict) {
+    return NextResponse.json(
+      { error: `Créneau bloqué${blockedConflict.reason ? ` : ${blockedConflict.reason}` : ""}` },
+      { status: 409 }
+    );
+  }
 
   const booking = await prisma.booking.create({
     data: {
@@ -77,6 +90,8 @@ export async function POST(req: NextRequest) {
       participants: Number(participants),
       duration: newDuration || null,
       nationality: nationality ?? null,
+      routeType: routeType ?? null,
+      allDay: allDay === true,
       notes: notes ?? null,
       externalRef: externalRef ?? null,
       status: conflict ? "refused" : "pending",
@@ -97,4 +112,11 @@ export async function POST(req: NextRequest) {
   ]);
 
   return NextResponse.json(booking, { status: 201 });
+}
+
+// DELETE /api/bookings — supprime toutes les réservations
+export async function DELETE() {
+  const { count } = await prisma.booking.deleteMany();
+  await writeLog("deleted", null, `Vaciado total: ${count} reservas eliminadas`);
+  return NextResponse.json({ deleted: count });
 }

@@ -1,0 +1,258 @@
+================================================================
+HORUS — MANUAL TEST SHEET
+Version : 1.0-Alpha
+Tester  : ___________________________
+Date    : ___________________________
+URL     : http://[URL provided by Alexis]
+================================================================
+
+INSTRUCTIONS
+------------
+For each test, replace [ ] with:
+  [OK]   = works correctly
+  [NOK]  = does not work
+  [?]    = could not test
+
+If NOK, add a short note after the line.
+Example:
+  [NOK] 1.1.2 Stat tiles — NOTE: Total shows 0 even though there are bookings
+
+================================================================
+SETUP — do this first
+================================================================
+
+[ ] P1  Go to the provided URL → page loads without errors
+[ ] P2  Go to /logs → click "Demo" → success message:
+        "27 reservas + 37 bloqueados"
+
+================================================================
+1. DASHBOARD (main page)
+================================================================
+
+--- Stat tiles ---
+[ ] 1.1  5 tiles visible: Pendientes / Confirmadas / Rechazadas / Total / Bloqueados
+[ ] 1.2  Tile values match: Pendientes=7 · Confirmadas=16 · Rechazadas=4 · Total=27
+[ ] 1.3  Click Pendientes tile → list shows only 7 pending bookings
+[ ] 1.4  Click Confirmadas tile → list shows only 16 confirmed bookings
+[ ] 1.5  Click Rechazadas tile → list shows only 4 refused bookings
+[ ] 1.6  Click Total tile → all 27 bookings visible
+[ ] 1.7  Click Bloqueados tile → a table appears (not a booking list)
+         Table has columns: Fecha / Hora / Duración / Motivo
+         Past blocked slots appear dimmed (greyed out)
+
+--- Search ---
+[ ] 1.8  Type "Sophie" → only Sophie Martin (Bardenas Reales, Viator) appears
+[ ] 1.9  Type "Bardenas" → 6 bookings visible (Sophie Martin, Maria Rossi,
+         Pieter van Dam, Antoine Dubois, Isabel García, Yuki Tanaka,
+         Giulia Ferrari, Pablo Moreno)
+[ ] 1.10 Type "mail.de" → Hans Müller + Klaus Weber + Stefan Bauer appear
+[ ] 1.11 Clear the search → all 27 bookings come back
+
+--- Filters ---
+[ ] 1.12 Click "Filtros" → filter panel opens
+[ ] 1.13 Select Estado = "Pendiente" → 7 bookings:
+         Hans Müller, Pieter van Dam, Antoine Dubois, Yuki Tanaka,
+         Astrid Olsen, Michael Davis, Ana Martínez
+[ ] 1.14 Select Plataforma = "Viator" → filters combined (pending + viator):
+         Antoine Dubois + Astrid Olsen
+[ ] 1.15 Click "Restablecer filtros" → all filters reset, 27 bookings visible
+[ ] 1.16 Select Estado = "Bloqueado" → blocked slots table shown (same as tile click)
+[ ] 1.17 Badge on "Filtros" button shows the number of active filters
+
+--- Sorting ---
+[ ] 1.18 Click "Fecha" (quick sort) → list sorted chronologically
+         First entry should be Sophie Martin (soonest date)
+[ ] 1.19 Click "Fecha" again → reversed, Ana Martínez last entry first
+[ ] 1.20 Click "Pers." → sorted by participants ascending (2 → 15)
+         James Smith & Pieter van Dam & Amélie Bernard (2 each) at the top
+
+--- Pagination ---
+[ ] 1.21 15 bookings shown on page 1, remaining on page 2
+[ ] 1.22 Click » → page 2 with remaining bookings visible
+[ ] 1.23 Click « → back to page 1
+[ ] 1.24 Changing a filter resets to page 1 automatically
+
+--- Booking cards ---
+[ ] 1.25 Hans Müller card (Pendiente): shows buttons Aceptar and Rechazar
+[ ] 1.26 Sophie Martin card (Confirmada): no Aceptar/Rechazar buttons
+[ ] 1.27 James Smith card (Rechazada): red colour, no Aceptar/Rechazar buttons
+[ ] 1.28 Carlos López card: flag is a small image (not the letters "ES")
+[ ] 1.29 Sophie Martin booking code shows: RCV
+         (R = booking, C = Corta, V = Viator)
+[ ] 1.30 Maria Rossi booking code shows: RC
+         (R = booking, C = Corta, no letter for WordPress)
+[ ] 1.31 Carlos López card shows "Toda la jornada" (full day, no time)
+[ ] 1.32 Hans Müller card shows note: "Grupo con niños"
+
+================================================================
+2. ACCEPT / REFUSE a booking
+================================================================
+
+[ ] 2.1  Click Aceptar on Hans Müller → status changes to Confirmada (green)
+         Pendientes tile goes from 7 to 6, Confirmadas from 16 to 17
+[ ] 2.2  Click Rechazar on Pieter van Dam → status changes to Rechazada (red)
+         Pendientes goes to 5, Rechazadas from 4 to 5
+[ ] 2.3  Try to confirm Antoine Dubois (same time slot as Sophie Martin, same day):
+         Error message: "Conflicto de horario con la reserva de Sophie Martin"
+         NOTE: This only works if they overlap — skip if dates don't conflict
+
+--- Delete ---
+[ ] 2.4  Click "Eliminar reserva" on any booking → browser confirmation appears
+[ ] 2.5  Confirm deletion → card disappears, Total decreases by 1
+[ ] 2.6  Cancel deletion → nothing happens
+
+================================================================
+3. CREATE A BOOKING
+================================================================
+
+[ ] 3.1  Click "+ Nueva reserva" → form opens
+[ ] 3.2  Click "Crear reserva" without filling fields → error message shown
+[ ] 3.3  Fill all required fields and submit → booking created, Total increases
+[ ] 3.4  Check "Toda la jornada" → time field disappears, duration disappears
+[ ] 3.5  Uncheck "Toda la jornada" → time and duration fields come back
+[ ] 3.6  Time selector steps by 30 min only: 09:00, 09:30, 10:00...
+         Cannot select 09:15 or 09:45
+[ ] 3.7  Create a booking on 03 August 2026 (Vacaciones verano blocked day)
+         → error: "Créneau bloqué : Vacaciones verano"
+
+================================================================
+4. CALENDAR (/calendar)
+================================================================
+
+--- Views ---
+[ ] 4.1  Page loads in Week view by default
+[ ] 4.2  Click "Mes" → monthly Gantt view
+[ ] 4.3  Click "Semana" → weekly view
+[ ] 4.4  Click "Día" → daily view
+[ ] 4.5  Click "Lista" → list view
+
+--- Navigation ---
+[ ] 4.6  Click ‹ → previous week/month/day (depending on view)
+[ ] 4.7  Click › → next period
+[ ] 4.8  Click "Hoy" → returns to today
+[ ] 4.9  Title at the top updates on every navigation click
+
+--- Bookings in calendar ---
+[ ] 4.10 Pending bookings are orange/amber coloured
+[ ] 4.11 Confirmed bookings are green
+[ ] 4.12 Refused bookings are red
+[ ] 4.13 Click Sophie Martin's event → side panel shows:
+         - Source badge: VIATOR
+         - Status: Confirmada (green)
+         - Tour: Bardenas Reales
+         - Guest: Sophie Martin + French flag
+         - Email: sophie.martin@mail.fr (clickable)
+         - Participants: 3 pers.
+         - Tipo ruta: Corta
+         - Ref. OTA: VIA-001
+[ ] 4.14 Click × on the panel → panel closes
+[ ] 4.15 Carlos López entry shows "Toda la jornada" (all day bar, no time)
+[ ] 4.16 Monthly Gantt: Laura Fernández (Noche en Bardenas, 20:00, 8h)
+         Label is visible outside the bar on the right (not cut off)
+
+--- Blocked slots in calendar ---
+[ ] 4.17 Navigate to August 2026 (monthly view) → grey bars visible on:
+         Aug 3, 4, 5, 6, 7 and Aug 10, 11, 12, 13, 14
+         Label: "Vacaciones verano"
+[ ] 4.18 Navigate to week of 15 September 2026 (weekly view) →
+         grey block on Sept 15 for 4h (Formación guías turísticos)
+[ ] 4.19 Navigate to 5 October 2026 (daily view) →
+         grey block at 09:00 for 2h (Cita médica)
+[ ] 4.20 List view: blocked slots do NOT appear in the list
+         (only Sophie Martin, Hans Müller... no "Vacaciones verano")
+[ ] 4.21 Click a blocked slot (e.g. grey bar in weekly view) →
+         side panel shows: "Bloqueado" + reason + date
+[ ] 4.22 In the panel, click "Eliminar bloqueo" → slot disappears from calendar
+
+--- Create a block ---
+[ ] 4.23 Click "Bloquear horario" → form opens
+[ ] 4.24 Clicar "Cancelar" → form closes without creating anything
+[ ] 4.25 Set date = tomorrow, check "Toda la jornada", reason = "Test block"
+         → click Guardar → grey slot appears in calendar on that day
+[ ] 4.26 Create partial block: date = 3 days from now, time = 14:00, duration = 2h
+         → grey block visible in weekly/daily view at 14:00–16:00
+[ ] 4.27 The allDay block falls on the correct day (not the day before)
+
+================================================================
+5. PLANNING (/planning)
+================================================================
+
+[ ] 5.1  Page shows a table with confirmed bookings for the current month
+[ ] 5.2  Columns: Fecha / Código / Tour / Inicio / Fin / Pers. / Nacionalidad
+[ ] 5.3  Sophie Martin row: code = RCV, Tour = Bardenas Reales, flag visible
+[ ] 5.4  Carlos López row: code = RLC, Inicio = "☀ Jornada", Fin = "—"
+[ ] 5.5  Yuki Tanaka does NOT appear (status = pending, not confirmed)
+[ ] 5.6  Klaus Weber does NOT appear (status = refused)
+[ ] 5.7  Footer row: total participants shown at the bottom of the table
+[ ] 5.8  Click ‹ → previous month
+[ ] 5.9  Click › → next month
+[ ] 5.10 Navigate to August 2026 → "Vacaciones verano" rows visible (greyed, 🔒)
+[ ] 5.11 Navigate to December 2026 → "Navidad" + "Vacaciones Navidad" rows visible
+[ ] 5.12 Navigate to July 2027 → row on July 3rd: "💍 Boda de Clara y Alexis"
+[ ] 5.13 Navigate to a month with no activity → message "Sin actividad en..."
+[ ] 5.14 Summary line shows: "X reservas · Y personas · 🔒 Z bloqueados"
+
+================================================================
+6. LOGS (/logs)
+================================================================
+
+[ ] 6.1  Page shows list of actions, most recent at the top
+[ ] 6.2  After demo load: a "[DEMO] Jeu de données généré" entry visible
+[ ] 6.3  Accept a booking → new "confirmed" entry appears in logs
+[ ] 6.4  Delete a booking → new "deleted" entry appears in logs
+[ ] 6.5  Filter by type "confirmed" → only confirmation entries shown
+[ ] 6.6  Type "Sophie" in search → only Sophie Martin log entries shown
+
+--- Danger zone ---
+[ ] 6.7  Click "Vaciar logs" → confirm → log list is empty
+[ ] 6.8  Click "Vaciar toda la aplicación" → click CANCEL at first prompt → nothing deleted
+[ ] 6.9  Click "Vaciar toda la aplicación" → confirm first → CANCEL second → nothing deleted
+[ ] 6.10 Click "Vaciar toda la aplicación" → confirm both prompts →
+         Dashboard shows: Pendientes=0 · Confirmadas=0 · Rechazadas=0 · Total=0
+         Bloqueados tile = 0
+         Calendar is empty
+         Planning shows "Sin actividad"
+
+================================================================
+7. DEMO DATA VERIFICATION (after loading demo)
+================================================================
+
+[ ] 7.1  Dashboard Total = 27 bookings
+[ ] 7.2  All 5 platforms present: Viator, GetYourGuide, Civitatis, WordPress, Manual
+[ ] 7.3  All 3 statuses present: 16 confirmed, 7 pending, 4 refused
+[ ] 7.4  5 "Toda la jornada" bookings:
+         Carlos López, João Silva, Yuki Tanaka, Erik Lindqvist, Michael Davis
+[ ] 7.5  Refused bookings are: James Smith, Klaus Weber, Oliver Brown, Amélie Bernard
+[ ] 7.6  Note "Grupo con niños" visible on Hans Müller's card
+[ ] 7.7  Note "Aniversario — pedir detalle" visible on Claire Dupont's card
+[ ] 7.8  Flags visible for all nationalities (FR, DE, ES, IT, NL, GB, US, PT,
+         BR, AR, MX, JP, CA, SE, NO, BE) — no raw country codes
+
+================================================================
+8. CONSISTENCY BETWEEN PAGES
+================================================================
+
+[ ] 8.1  Accept a booking on the dashboard → it appears confirmed in /calendar
+[ ] 8.2  Accept a booking on the dashboard → it appears in /planning table
+[ ] 8.3  Delete a booking from /calendar → it disappears from the dashboard
+[ ] 8.4  Create a block from /calendar → Bloqueados tile in dashboard increases
+[ ] 8.5  Delete a block from /calendar → Bloqueados tile decreases
+[ ] 8.6  Reload page (F5) → all data still present (no data loss on refresh)
+
+================================================================
+SUMMARY
+================================================================
+
+Tests:  OK [   ]   NOK [   ]   Not tested [   ]
+
+ISSUES FOUND (number + short description):
+------------------------------------------
+1.
+2.
+3.
+4.
+5.
+
+================================================================
+Thank you! Please send this filled file back to Alexis.
+================================================================

@@ -7,6 +7,14 @@ import { useState, useRef } from "react";
 import type FullCalendarType from "@fullcalendar/react";
 import type { Booking } from "./BookingCard";
 import { Flag } from "./BookingCard";
+import type { BlockedSlot } from "@/lib/types";
+
+// R + type de route (C/M/L) + première lettre de la source (vide si wordpress)
+function bookingCode(b: { routeType?: string | null; source: string }): string {
+  const routeChar = ({ corta: "C", media: "M", larga: "L" } as Record<string, string>)[b.routeType ?? ""] ?? "";
+  const sourceChar = b.source === "wordpress" ? "" : b.source.charAt(0).toUpperCase();
+  return "R" + routeChar + sourceChar;
+}
 
 const STATUS_COLOR: Record<string, string> = {
   pending:   "#f59e0b",
@@ -23,10 +31,14 @@ type View = "month" | "week" | "day";
 
 export default function Calendar({
   bookings,
+  blocked = [],
   onBookingClick,
+  onBlockedClick,
 }: {
   bookings: Booking[];
+  blocked?: BlockedSlot[];
   onBookingClick: (booking: Booking) => void;
+  onBlockedClick?: (slot: BlockedSlot) => void;
 }) {
   const [view, setView] = useState<View>("week");
   const [current, setCurrent] = useState(() => {
@@ -106,16 +118,35 @@ export default function Calendar({
 
   // --- Vue semaine / jour : FullCalendar ---
   if (view === "week" || view === "day") {
-    const events = bookings.map((b) => ({
-      id: b.id,
-      title: `${b.tourName} — ${b.guestName} (${b.participants})`,
-      start: b.date,
-      end: b.duration ? new Date(new Date(b.date).getTime() + b.duration * 60_000).toISOString() : undefined,
-      backgroundColor: STATUS_COLOR[b.status] ?? "#64748b",
-      borderColor:     STATUS_COLOR[b.status] ?? "#64748b",
-      textColor: b.status === "pending" ? "#000" : "#fff",
-      extendedProps: { nationality: b.nationality },
-    }));
+    const events = [
+      ...bookings.map((b) => ({
+        id: b.id,
+        title: `${b.tourName} — ${b.guestName} (${b.participants})`,
+        start: b.allDay ? b.date.slice(0, 10) : b.date,
+        end: b.allDay
+          ? undefined
+          : b.duration ? new Date(new Date(b.date).getTime() + b.duration * 60_000).toISOString() : undefined,
+        allDay: b.allDay,
+        backgroundColor: STATUS_COLOR[b.status] ?? "#64748b",
+        borderColor:     STATUS_COLOR[b.status] ?? "#64748b",
+        textColor: b.status === "pending" ? "#000" : "#fff",
+        extendedProps: { nationality: b.nationality, code: bookingCode(b), isBlocked: false },
+      })),
+      ...blocked.map((bl) => ({
+        id: "blocked-" + bl.id,
+        title: bl.reason ? `🔒 ${bl.reason}` : "🔒 Bloqueado",
+        start: bl.allDay ? bl.date.slice(0, 10) : bl.date,
+        end: bl.allDay
+          ? undefined
+          : bl.duration ? new Date(new Date(bl.date).getTime() + bl.duration * 60_000).toISOString() : undefined,
+        allDay: bl.allDay,
+        backgroundColor: bl.allDay ? "rgba(51,65,85,0.6)" : "#1e293b",
+        borderColor:     "#475569",
+        textColor: "#94a3b8",
+        display: bl.allDay ? "background" : "block",
+        extendedProps: { isBlocked: true, nationality: null, code: null },
+      })),
+    ];
 
     return (
       <div>
@@ -129,8 +160,14 @@ export default function Calendar({
           firstDay={1}
           events={events}
           eventClick={(info) => {
-            const b = bookings.find((x) => x.id === info.event.id);
-            if (b) onBookingClick(b);
+            if (info.event.id.startsWith("blocked-")) {
+              const id = info.event.id.replace("blocked-", "");
+              const bl = blocked.find((x) => x.id === id);
+              if (bl) onBlockedClick?.(bl);
+            } else {
+              const b = bookings.find((x) => x.id === info.event.id);
+              if (b) onBookingClick(b);
+            }
           }}
           height="auto"
           slotMinTime="06:00:00"
@@ -139,15 +176,27 @@ export default function Calendar({
           eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
           headerToolbar={false}
           datesSet={(info) => setFcTitle(info.view.title)}
-          eventContent={(arg) => (
-            <div className="px-1 py-0.5 text-xs leading-tight cursor-pointer flex items-center gap-1">
-              <span className="font-semibold shrink-0">{arg.timeText}</span>
-              <span className="opacity-90 truncate">{arg.event.title}</span>
-              {arg.event.extendedProps.nationality && (
-                <Flag code={arg.event.extendedProps.nationality} size="0.9rem" />
-              )}
-            </div>
-          )}
+          eventContent={(arg) => {
+            if (arg.event.extendedProps.isBlocked) {
+              return (
+                <div className="px-1 py-0.5 text-xs leading-tight flex items-center gap-1 opacity-70"
+                  style={{ borderLeft: "3px solid #475569" }}>
+                  <span>🔒</span>
+                  <span className="truncate text-slate-400">{arg.event.title.replace("🔒 ", "")}</span>
+                </div>
+              );
+            }
+            return (
+              <div className="px-1 py-0.5 text-xs leading-tight cursor-pointer flex items-center gap-1">
+                <span className="font-semibold shrink-0">{arg.timeText}</span>
+                <span className="opacity-90 truncate">{arg.event.title}</span>
+                <span className="shrink-0 font-mono font-bold opacity-80">{arg.event.extendedProps.code}</span>
+                {arg.event.extendedProps.nationality && (
+                  <Flag code={arg.event.extendedProps.nationality} size="0.9rem" />
+                )}
+              </div>
+            );
+          }}
         />
       </div>
     );
@@ -220,6 +269,13 @@ export default function Calendar({
     : 1;
   const CELL_H  = 24 + maxSlots * ROW_GAP + 4;
 
+  // Index blocked slots par jour pour la vue mois
+  const blockedByDay: Record<string, BlockedSlot[]> = {};
+  blocked.forEach((bl) => {
+    const key = new Date(bl.date).toISOString().slice(0, 10);
+    (blockedByDay[key] ??= []).push(bl);
+  });
+
   return (
     <div>
       {toolbar}
@@ -241,6 +297,7 @@ export default function Calendar({
           const dayBookings = (byDay[key] ?? []).sort(
             (a, b) => new Date(a.booking.date).getTime() - new Date(b.booking.date).getTime()
           );
+          const dayBlocked = blockedByDay[key] ?? [];
           const isToday = date
             ? date.getDate() === today.getDate() &&
               date.getMonth() === today.getMonth() &&
@@ -274,6 +331,29 @@ export default function Calendar({
                 const color     = STATUS_COLOR[b.status] ?? "#64748b";
                 const textColor = b.status === "pending" ? "#000" : "#fff";
                 const top       = 22 + (bookingRow[b.id] ?? 0) * ROW_GAP;
+
+                // --- Toute la journée : barre pleine largeur ---
+                if (b.allDay) {
+                  return (
+                    <div
+                      key={b.id + "-allday"}
+                      onClick={(e) => { e.stopPropagation(); onBookingClick(b); }}
+                      title={`Toda la jornada — ${b.tourName} (${b.guestName})`}
+                      style={{
+                        top, left: 0, width: "100%", height: BAR_H,
+                        backgroundColor: color,
+                        borderLeft: `3px solid rgba(0,0,0,0.30)`,
+                        borderRadius: 3,
+                        opacity: 0.9,
+                      }}
+                      className="absolute z-20 cursor-pointer hover:brightness-110 transition-all flex items-center px-1 gap-1"
+                    >
+                      <span style={{ color: textColor, fontSize: 9, fontWeight: 700, lineHeight: 1, whiteSpace: "nowrap" }}>
+                        ☀ {bookingCode(b)}{b.nationality && <Flag code={b.nationality} size="0.75rem" />}
+                      </span>
+                    </div>
+                  );
+                }
 
                 // --- Mode "end" : la réservation finit ce jour-là ---
                 if (mode === "end") {
@@ -345,8 +425,35 @@ export default function Calendar({
                         : { left: "2px", color: textColor }),            // dans la barre
                       fontSize: 9, fontWeight: 700, lineHeight: 1, whiteSpace: "nowrap",
                     }}>
-                      {timeStr}{mode === "start" ? "→" : ""}{!isLate && b.nationality && <Flag code={b.nationality} size="0.75rem" />}
+                      {timeStr}{mode === "start" ? "→" : ""}{!isLate && <> <span style={{fontFamily:"monospace",fontWeight:800}}>{bookingCode(b)}</span>{b.nationality && <Flag code={b.nationality} size="0.75rem" />}</>}
                     </span>
+                  </div>
+                );
+              })}
+
+              {/* Créneaux bloqués */}
+              {isValid && dayBlocked.map((bl) => {
+                const blDate = new Date(bl.date);
+                if (bl.allDay) {
+                  return (
+                    <div key={"bl-" + bl.id}
+                      title={bl.reason ? `🔒 ${bl.reason}` : "🔒 Bloqueado"}
+                      style={{ top: 2, left: 0, right: 0, bottom: 2, backgroundColor: "#1e293b", border: "1px dashed #475569", borderRadius: 3, zIndex: 5 }}
+                      className="absolute flex items-center justify-center pointer-events-none">
+                      <span style={{ fontSize: 9, color: "#64748b", fontWeight: 700 }}>🔒{bl.reason ? ` ${bl.reason}` : ""}</span>
+                    </div>
+                  );
+                }
+                const minFromStart = (blDate.getHours() - DAY_START_H) * 60 + blDate.getMinutes();
+                const leftPct  = Math.max(0, Math.min(98, (minFromStart / DAY_RANGE) * 100));
+                const widthPct = bl.duration ? Math.max(2, (bl.duration / DAY_RANGE) * 100) : 4;
+                const blTop    = 22 + maxSlots * ROW_GAP + 2;
+                return (
+                  <div key={"bl-" + bl.id}
+                    title={bl.reason ? `🔒 ${bl.reason}` : "🔒 Bloqueado"}
+                    style={{ top: blTop, left: `${leftPct}%`, width: `${widthPct}%`, height: BAR_H, backgroundColor: "#334155", border: "1px dashed #64748b", borderRadius: 3 }}
+                    className="absolute flex items-center px-1">
+                    <span style={{ fontSize: 9, color: "#94a3b8", fontWeight: 700, whiteSpace: "nowrap" }}>🔒</span>
                   </div>
                 );
               })}

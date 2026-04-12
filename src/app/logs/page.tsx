@@ -22,6 +22,9 @@ export default function LogsPage() {
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [clearing, setClearing] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+  const [seedError, setSeedError] = useState<string | null>(null);
 
   function fetchLogs() {
     setLoading(true);
@@ -37,6 +40,33 @@ export default function LogsPage() {
     setClearing(true);
     await fetch("/api/logs", { method: "DELETE" });
     setClearing(false);
+    fetchLogs();
+  }
+
+  async function seedDemo() {
+    if (!confirm("¿Generar datos de demo para el próximo mes? Se añadirán 27 reservas de ejemplo.")) return;
+    setSeeding(true);
+    setSeedError(null);
+    try {
+      const res = await fetch("/api/seed", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) setSeedError(data.error ?? `Error ${res.status}`);
+      else fetchLogs();
+    } catch (e) {
+      setSeedError(String(e));
+    } finally {
+      setSeeding(false);
+    }
+  }
+
+  async function resetAll() {
+    if (!confirm("⚠️ ¿Eliminar TODAS las reservas y logs? Esta acción es irreversible.")) return;
+    if (!confirm("Segunda confirmación: ¿seguro que quieres vaciar toda la aplicación?")) return;
+    setResetting(true);
+    await fetch("/api/bookings", { method: "DELETE" });
+    await fetch("/api/blocked", { method: "DELETE" });
+    await fetch("/api/logs", { method: "DELETE" });
+    setResetting(false);
     fetchLogs();
   }
 
@@ -99,6 +129,32 @@ export default function LogsPage() {
           <option value="deleted">Eliminada</option>
         </select>
         <span className="text-xs text-slate-500 ml-auto">{displayed.length} entrada(s)</span>
+      </div>
+
+      {/* Demo */}
+      <div className="border border-amber-800/50 rounded-lg p-4 bg-amber-950/20">
+        <p className="text-amber-400 font-semibold text-sm mb-1">Demo</p>
+        <p className="text-slate-400 text-xs mb-3">Genera 27 reservas de ejemplo sobre el próximo mes, cubriendo todas las opciones de la aplicación.</p>
+        <button onClick={seedDemo} disabled={seeding}
+          className="text-xs px-3 py-1.5 rounded border border-amber-600 bg-amber-900/30 text-amber-300 hover:bg-amber-900/60 disabled:opacity-30 transition-colors font-semibold">
+          {seeding ? "Generando..." : "✦ Cargar datos de demo"}
+        </button>
+        {seedError && <p className="text-red-400 text-xs mt-2">⚠ {seedError}</p>}
+      </div>
+
+      {/* Zona de peligro */}
+      <div className="border border-red-900/50 rounded-lg p-4 bg-red-950/20">
+        <p className="text-red-400 font-semibold text-sm mb-3">⚠ Zona de peligro</p>
+        <div className="flex gap-3 flex-wrap">
+          <button onClick={clearLogs} disabled={clearing || logs.length === 0}
+            className="text-xs px-3 py-1.5 rounded border border-red-800 text-red-400 hover:bg-red-900/30 disabled:opacity-30 transition-colors">
+            {clearing ? "Vaciando..." : "Vaciar logs"}
+          </button>
+          <button onClick={resetAll} disabled={resetting}
+            className="text-xs px-3 py-1.5 rounded border border-red-600 bg-red-900/30 text-red-300 hover:bg-red-900/60 disabled:opacity-30 transition-colors font-semibold">
+            {resetting ? "Vaciando..." : "🗑 Vaciar toda la aplicación"}
+          </button>
+        </div>
       </div>
 
       {/* Liste */}

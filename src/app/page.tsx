@@ -3,8 +3,9 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import BookingCard, { type Booking } from "@/components/BookingCard";
 import PushSubscribe from "@/components/PushSubscribe";
 import { NATIONALITIES } from "@/lib/nationalities";
+import type { BlockedSlot } from "@/lib/types";
 
-type StatusFilter = "all" | "pending" | "confirmed" | "refused";
+type StatusFilter = "all" | "pending" | "confirmed" | "refused" | "blocked";
 type SortField = "date" | "guestName" | "tourName" | "participants" | "source";
 type SortDir = "asc" | "desc";
 
@@ -13,12 +14,13 @@ const PAGE_SIZE = 15;
 
 export default function Dashboard() {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [blocked, setBlocked] = useState<BlockedSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionError, setActionError] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Filtres
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -39,7 +41,10 @@ export default function Dashboard() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchBookings(); }, [fetchBookings]);
+  useEffect(() => {
+    fetchBookings();
+    fetch("/api/blocked").then((r) => r.json()).then(setBlocked);
+  }, [fetchBookings]);
 
   async function handleDelete(id: string) {
     await fetch(`/api/bookings/${id}`, { method: "DELETE" });
@@ -113,6 +118,7 @@ export default function Dashboard() {
 
   const pending   = bookings.filter((b) => b.status === "pending").length;
   const confirmed = bookings.filter((b) => b.status === "confirmed").length;
+  const refused   = bookings.filter((b) => b.status === "refused").length;
   const activeFiltersCount = [
     statusFilter !== "all", sourceFilter !== "all",
     search, dateFrom, dateTo,
@@ -124,10 +130,12 @@ export default function Dashboard() {
       <PushSubscribe />
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <Stat label="Pendientes" value={pending} color="text-amber-400" onClick={() => setStatusFilter("pending")} />
-        <Stat label="Confirmadas" value={confirmed} color="text-green-400" onClick={() => setStatusFilter("confirmed")} />
-        <Stat label="Total" value={bookings.length} color="text-slate-300" onClick={() => setStatusFilter("all")} />
+      <div className="grid grid-cols-5 gap-3">
+        <Stat label="Pendientes"  value={pending}                                          color="text-amber-400"  onClick={() => setStatusFilter("pending")} />
+        <Stat label="Confirmadas" value={confirmed}                                         color="text-green-400"  onClick={() => setStatusFilter("confirmed")} />
+        <Stat label="Rechazadas"  value={refused}                                           color="text-red-400"    onClick={() => setStatusFilter("refused")} />
+        <Stat label="Total"       value={bookings.length}                                   color="text-slate-300"  onClick={() => setStatusFilter("all")} />
+        <Stat label="🔒 Bloqueados" value={blocked.filter(bl => new Date(bl.date) >= new Date()).length} color="text-slate-400" onClick={() => setStatusFilter("blocked")} />
       </div>
 
       {/* Barre de contrôle */}
@@ -171,6 +179,7 @@ export default function Dashboard() {
                 <option value="pending">Pendiente</option>
                 <option value="confirmed">Confirmada</option>
                 <option value="refused">Rechazada</option>
+                <option value="blocked">🔒 Bloqueado</option>
               </select>
             </div>
 
@@ -230,7 +239,7 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center justify-between pt-1">
-            <span className="text-xs text-slate-500">{displayed.length} reserva(s) mostrada(s)</span>
+            <span className="text-xs text-slate-500">{statusFilter === "blocked" ? `${blocked.length} bloqueado(s)` : `${displayed.length} reserva(s) mostrada(s)`}</span>
             <button onClick={resetFilters} className="text-xs text-slate-400 hover:text-amber-400">
               Restablecer filtros
             </button>
@@ -248,7 +257,7 @@ export default function Dashboard() {
               {label} {sortField === f ? (sortDir === "asc" ? "↑" : "↓") : ""}
             </button>
           ))}
-          <span className="ml-auto text-slate-600">{displayed.length} resultado(s)</span>
+          <span className="ml-auto text-slate-600">{statusFilter === "blocked" ? `${blocked.length} bloqueado(s)` : `${displayed.length} resultado(s)`}</span>
         </div>
       )}
 
@@ -261,6 +270,49 @@ export default function Dashboard() {
       {/* Lista */}
       {loading ? (
         <p className="text-slate-500 text-center py-8">Cargando...</p>
+      ) : statusFilter === "blocked" ? (
+        blocked.length === 0 ? (
+          <div className="text-center py-12 text-slate-500">
+            <p className="text-4xl mb-3">🔒</p>
+            <p>Sin horarios bloqueados</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-lg border border-slate-700">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-800 border-b border-slate-700">
+                <tr>
+                  <th className="text-left px-3 py-2 text-slate-400 font-medium">Fecha</th>
+                  <th className="text-left px-3 py-2 text-slate-400 font-medium">Hora</th>
+                  <th className="text-left px-3 py-2 text-slate-400 font-medium">Duración</th>
+                  <th className="text-left px-3 py-2 text-slate-400 font-medium">Motivo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...blocked]
+                  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                  .map((bl) => {
+                    const d = new Date(bl.date);
+                    const dateStr = d.toLocaleDateString("es-ES", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" });
+                    const timeStr = bl.allDay ? "Jornada completa" : d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", hour12: false });
+                    const endStr = bl.allDay || !bl.duration ? "—" : (() => {
+                      const h = Math.floor(bl.duration / 60);
+                      const m = bl.duration % 60;
+                      return h === 0 ? `${m}min` : m === 0 ? `${h}h` : `${h}h${m}`;
+                    })();
+                    const isPast = d < new Date();
+                    return (
+                      <tr key={bl.id} className={`border-b border-slate-700/50 ${isPast ? "opacity-40" : "hover:bg-slate-800/50"} transition-colors`}>
+                        <td className="px-3 py-2.5 text-slate-300 whitespace-nowrap">{dateStr}</td>
+                        <td className="px-3 py-2.5 text-slate-400 font-mono text-xs whitespace-nowrap">{timeStr}</td>
+                        <td className="px-3 py-2.5 text-slate-400 font-mono text-xs">{endStr}</td>
+                        <td className="px-3 py-2.5 text-slate-300 italic">{bl.reason ?? <span className="text-slate-600">—</span>}</td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+        )
       ) : displayed.length === 0 ? (
         <div className="text-center py-12 text-slate-500">
           <p className="text-4xl mb-3">📭</p>
@@ -368,7 +420,9 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
     date: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16),
     participants: "2",
     duration: "",
+    allDay: false,
     nationality: "",
+    routeType: "",
     notes: "",
   });
 
@@ -398,8 +452,8 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
 
   return (
     <div className="border-t border-slate-700 pt-4">
-      <button onClick={() => setOpen(!open)} className="text-sm text-slate-400 hover:text-amber-400">
-        + Simular una reserva OTA
+      <button onClick={() => setOpen(!open)} className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-semibold text-sm rounded-lg transition-colors">
+        <span className="text-lg leading-none">+</span> Nueva reserva
       </button>
 
       {open && (
@@ -435,8 +489,12 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
                 className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
             </div>
             <div>
-              <label className="text-xs text-slate-400 block mb-1">Fecha y hora</label>
-              <input type="datetime-local" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })}
+              <label className="text-xs text-slate-400 block mb-1">Fecha{form.allDay ? "" : " y hora"}</label>
+              <input
+                type={form.allDay ? "date" : "datetime-local"}
+                value={form.allDay ? form.date.slice(0, 10) : form.date}
+                onChange={(e) => setForm({ ...form, date: form.allDay ? e.target.value + "T00:00" : e.target.value })}
+                step={form.allDay ? undefined : 1800}
                 className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
             </div>
             <div>
@@ -455,17 +513,27 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
               </select>
             </div>
             <div>
+              <label className="text-xs text-slate-400 block mb-1">Tipo de ruta (opcional)</label>
+              <select value={form.routeType} onChange={(e) => setForm({ ...form, routeType: e.target.value })}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
+                <option value="">— Sin especificar</option>
+                <option value="corta">🟢 Ruta corta</option>
+                <option value="media">🟡 Ruta media</option>
+                <option value="larga">🔴 Ruta larga</option>
+              </select>
+            </div>
+            <div className="flex flex-col justify-end">
+              <label className="flex items-center gap-2 cursor-pointer mt-4">
+                <input type="checkbox" checked={form.allDay}
+                  onChange={(e) => setForm({ ...form, allDay: e.target.checked, duration: e.target.checked ? "" : form.duration })}
+                  className="w-4 h-4 accent-amber-500" />
+                <span className="text-sm text-white font-medium">Toda la jornada</span>
+              </label>
+            </div>
+            {!form.allDay && (
+            <div>
               <label className="text-xs text-slate-400 block mb-1">Duración (opcional)</label>
-              <select value={form.duration} onChange={(e) => {
-                const val = e.target.value;
-                if (val === "780") {
-                  // Día completo → forcer 08:00
-                  const d = form.date.slice(0, 10);
-                  setForm({ ...form, duration: val, date: `${d}T08:00` });
-                } else {
-                  setForm({ ...form, duration: val });
-                }
-              }}
+              <select value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })}
                 className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
                 <option value="">— Sin especificar</option>
                 <option value="60">1h</option>
@@ -476,9 +544,9 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
                 <option value="240">4h</option>
                 <option value="300">5h</option>
                 <option value="360">6h</option>
-                <option value="780">Día completo (8h–21h)</option>
               </select>
             </div>
+            )}
           </div>
           <div>
             <label className="text-xs text-slate-400 block mb-1">Notas (opcional)</label>

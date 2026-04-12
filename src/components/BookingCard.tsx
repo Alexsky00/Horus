@@ -21,9 +21,17 @@ export type Booking = {
   participants: number;
   duration: number | null;
   nationality: string | null;
+  routeType: string | null;
+  allDay: boolean;
   status: string;
   notes: string | null;
   externalRef: string | null;
+};
+
+const ROUTE_LABELS: Record<string, string> = {
+  corta: "🟢 Ruta corta",
+  media: "🟡 Ruta media",
+  larga: "🔴 Ruta larga",
 };
 
 const SOURCE_COLORS: Record<string, string> = {
@@ -87,6 +95,9 @@ export default function BookingCard({
         {dateStr} a las {timeStr} · {booking.participants} pers.
         {booking.duration && (
           <span className="ml-2 text-slate-500">· {formatDuration(booking.duration)}</span>
+        )}
+        {booking.routeType && (
+          <span className="ml-2 text-slate-500">· {ROUTE_LABELS[booking.routeType] ?? booking.routeType}</span>
         )}
       </p>
       <p className="text-slate-300 text-sm mt-1">

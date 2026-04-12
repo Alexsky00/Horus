@@ -34,12 +34,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <a href="/calendar" className="text-slate-300 hover:text-amber-400 text-sm font-medium">
               Calendario
             </a>
+            <a href="/planning" className="text-slate-300 hover:text-amber-400 text-sm font-medium">
+              Planning
+            </a>
             <a href="/logs" className="text-slate-300 hover:text-amber-400 text-sm font-medium">
               Logs
             </a>
           </nav>
         </header>
         <main className="max-w-5xl mx-auto px-4 py-6">{children}</main>
+        <footer className="border-t border-slate-800 mt-8 py-3 text-center">
+          <span className="text-slate-600 text-xs">Horus v1.0-Alpha</span>
+        </footer>
       </body>
     </html>
   );

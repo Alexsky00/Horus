@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { type Booking, Flag } from "@/components/BookingCard";
+import type { BlockedSlot } from "@/lib/types";
 
 const FullCalendarComponent = dynamic(() => import("@/components/Calendar"), { ssr: false });
 
@@ -28,19 +29,73 @@ function formatDuration(minutes: number): string {
   return `${h}h${m}`;
 }
 
+const DURATIONS = [
+  { value: "30",  label: "30 min" },
+  { value: "60",  label: "1h" },
+  { value: "90",  label: "1h30" },
+  { value: "120", label: "2h" },
+  { value: "180", label: "3h" },
+  { value: "240", label: "4h" },
+  { value: "300", label: "5h" },
+  { value: "360", label: "6h" },
+];
+
 export default function CalendarPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [blocked, setBlocked] = useState<BlockedSlot[]>([]);
   const [selected, setSelected] = useState<Booking | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  function fetchBookings() {
-    fetch("/api/bookings")
-      .then((r) => r.json())
-      .then(setBookings);
+  // Formulaire blocage
+  const [showBlock, setShowBlock] = useState(false);
+  const [blockForm, setBlockForm] = useState({
+    date: new Date().toISOString().slice(0, 10),
+    time: "09:00",
+    duration: "60",
+    allDay: false,
+    reason: "",
+  });
+  const [blockLoading, setBlockLoading] = useState(false);
+  const [selectedBlocked, setSelectedBlocked] = useState<BlockedSlot | null>(null);
+
+  async function deleteBlock(id: string) {
+    if (!confirm("¿Eliminar este bloqueo?")) return;
+    await fetch(`/api/blocked/${id}`, { method: "DELETE" });
+    setSelectedBlocked(null);
+    fetchBlocked();
   }
 
-  useEffect(() => { fetchBookings(); }, []);
+  function fetchBookings() {
+    fetch("/api/bookings").then((r) => r.json()).then(setBookings);
+  }
+  function fetchBlocked() {
+    fetch("/api/blocked").then((r) => r.json()).then(setBlocked);
+  }
+
+  useEffect(() => { fetchBookings(); fetchBlocked(); }, []);
+
+  async function submitBlock(e: React.FormEvent) {
+    e.preventDefault();
+    setBlockLoading(true);
+    const dateStr = blockForm.allDay
+      ? `${blockForm.date}T12:00`
+      : `${blockForm.date}T${blockForm.time}`;
+    await fetch("/api/blocked", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        date: dateStr,
+        duration: blockForm.allDay ? null : Number(blockForm.duration),
+        allDay: blockForm.allDay,
+        reason: blockForm.reason || null,
+      }),
+    });
+    setBlockLoading(false);
+    setShowBlock(false);
+    fetchBlocked();
+  }
+
 
   async function handleDelete(id: string) {
     if (!confirm(`¿Eliminar la reserva de ${selected?.guestName}?`)) return;
@@ -78,10 +133,73 @@ export default function CalendarPage() {
     <div className="space-y-4">
       <h1 className="text-lg font-semibold text-white">Calendario</h1>
 
-      <div className="flex gap-4 flex-col lg:flex-row">
+      {/* Bouton + formulaire blocage */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <button onClick={() => setShowBlock(!showBlock)}
+          className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-200 text-sm rounded-lg transition-colors">
+          🔒 {showBlock ? "Cancelar" : "Bloquear horario"}
+        </button>
+      </div>
+
+      {showBlock && (
+        <form onSubmit={submitBlock} className="bg-slate-800 border border-slate-600 rounded-lg p-4 space-y-3">
+          <p className="text-sm font-semibold text-slate-200">🔒 Bloquear créneau</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Fecha</label>
+              <input type="date" value={blockForm.date}
+                onChange={(e) => setBlockForm({ ...blockForm, date: e.target.value })}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
+            </div>
+            <div className="flex flex-col justify-end">
+              <label className="flex items-center gap-2 cursor-pointer mb-1">
+                <input type="checkbox" checked={blockForm.allDay}
+                  onChange={(e) => setBlockForm({ ...blockForm, allDay: e.target.checked })}
+                  className="w-4 h-4 accent-amber-500" />
+                <span className="text-sm text-white">Toda la jornada</span>
+              </label>
+            </div>
+            {!blockForm.allDay && <>
+              <div>
+                <label className="text-xs text-slate-400 block mb-1">Hora inicio</label>
+                <input type="time" step={1800} value={blockForm.time}
+                  onChange={(e) => setBlockForm({ ...blockForm, time: e.target.value })}
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 block mb-1">Duración</label>
+                <select value={blockForm.duration}
+                  onChange={(e) => setBlockForm({ ...blockForm, duration: e.target.value })}
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
+                  {DURATIONS.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </div>
+            </>}
+            <div className="col-span-2">
+              <label className="text-xs text-slate-400 block mb-1">Motivo (opcional)</label>
+              <input value={blockForm.reason}
+                onChange={(e) => setBlockForm({ ...blockForm, reason: e.target.value })}
+                placeholder="Ej: Vacaciones, enfermedad..."
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
+            </div>
+          </div>
+          <button type="submit" disabled={blockLoading}
+            className="px-4 py-1.5 bg-slate-600 hover:bg-slate-500 text-white text-sm font-medium rounded disabled:opacity-50">
+            {blockLoading ? "Guardando..." : "Guardar bloqueo"}
+          </button>
+        </form>
+      )}
+
+
+<div className="flex gap-4 flex-col lg:flex-row">
         {/* Calendrier */}
         <div className="bg-slate-800 rounded-lg p-4 border border-slate-700 flex-1 min-w-0">
-          <FullCalendarComponent bookings={bookings} onBookingClick={setSelected} />
+          <FullCalendarComponent
+            bookings={bookings}
+            blocked={blocked}
+            onBookingClick={(b) => { setSelectedBlocked(null); setSelected(b); }}
+            onBlockedClick={(bl) => { setSelected(null); setSelectedBlocked(bl); }}
+          />
         </div>
 
         {/* Panneau de détail */}
@@ -131,6 +249,14 @@ export default function CalendarPage() {
                 <span className="text-slate-500 w-24 flex-shrink-0">Participantes</span>
                 <span className="text-slate-200">{selected.participants} pers.</span>
               </div>
+              {selected.routeType && (
+                <div className="flex gap-2">
+                  <span className="text-slate-500 w-24 flex-shrink-0">Tipo ruta</span>
+                  <span className="text-slate-200">
+                    {{ corta: "🟢 Corta", media: "🟡 Media", larga: "🔴 Larga" }[selected.routeType] ?? selected.routeType}
+                  </span>
+                </div>
+              )}
               {selected.externalRef && (
                 <div className="flex gap-2">
                   <span className="text-slate-500 w-24 flex-shrink-0">Ref. OTA</span>
@@ -182,6 +308,33 @@ export default function CalendarPage() {
             </button>
           </div>
         )}
+
+        {/* Panneau créneau bloqué */}
+        {selectedBlocked && (
+          <div className="bg-slate-800 rounded-lg border-l-4 border-slate-500 border border-slate-700 p-5 w-full lg:w-80 flex-shrink-0 self-start">
+            <div className="flex items-start justify-between mb-4">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 font-medium">🔒 Bloqueado</span>
+              <button onClick={() => setSelectedBlocked(null)} className="text-slate-500 hover:text-white text-lg leading-none">×</button>
+            </div>
+            <p className="text-white font-semibold text-base mb-1">
+              {selectedBlocked.reason ?? "Sin motivo"}
+            </p>
+            <p className="text-slate-400 text-sm mb-4">
+              {new Date(selectedBlocked.date).toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+              {!selectedBlocked.allDay && (
+                <><br />{new Date(selectedBlocked.date).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                {selectedBlocked.duration && ` · ${Math.floor(selectedBlocked.duration / 60)}h${selectedBlocked.duration % 60 ? selectedBlocked.duration % 60 + "min" : ""}`}</>
+              )}
+              {selectedBlocked.allDay && <><br /><span className="text-slate-500">Jornada completa</span></>}
+            </p>
+            <button
+              onClick={() => deleteBlock(selectedBlocked.id)}
+              className="w-full text-xs text-slate-500 hover:text-red-400 transition-colors py-1 border border-slate-700 hover:border-red-800 rounded"
+            >
+              Eliminar bloqueo
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Légende */}
@@ -189,6 +342,7 @@ export default function CalendarPage() {
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-amber-500 inline-block"/> Pendiente</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-green-600 inline-block"/> Confirmada</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-red-700 inline-block"/> Rechazada</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-slate-600 inline-block"/> Bloqueado</span>
       </div>
     </div>
   );
