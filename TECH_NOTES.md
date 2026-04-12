@@ -90,6 +90,34 @@ Programmatic navigation uses `useRef<FullCalendarType>` + `fcRef.current.getApi(
 **Flag rendering**
 Uses `flag-icons` CSS library (SVG backgrounds) instead of Unicode emoji — required for Windows 10 compatibility which does not render regional indicator emoji.
 
+### Deployment & mobile testing
+
+**Option 1 — Vercel (recommended, permanent)**
+1. Go to vercel.com → sign in with GitHub
+2. `Add New Project` → import `arrondiko/Horus`
+3. Next.js detected automatically
+4. Add environment variables (same as `.env.local`)
+5. Click `Deploy` → generates a public URL (e.g. `horus-xxx.vercel.app`)
+
+Every `git push` triggers an automatic redeploy.
+
+**Option 2 — ngrok (quick, temporary)**
+```bash
+# Terminal 1
+npm run dev
+
+# Terminal 2
+npx ngrok http 3000
+```
+Generates a temporary public URL valid while the PC is running. URL changes on each restart.
+
+| | Vercel | ngrok |
+|---|---|---|
+| Permanent URL | ✅ | ❌ |
+| PC must be on | ❌ | ✅ |
+| Auto-deploy on push | ✅ | ❌ |
+| Best for | Remote testers | Quick local tests |
+
 ### Environment variables required
 ```
 DATABASE_URL=

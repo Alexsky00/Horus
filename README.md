@@ -1,51 +1,63 @@
-# ☀ Horus — Mode d'emploi complet
+# ☀ Horus — Gestión de Reservas Turísticas
 
-Système de gestion des réservations pour guide touristique.
-Viator · GetYourGuide · Civitatis · WordPress → un seul tableau de bord.
+**Versión : 1.0-Alpha**
+
+Sistema de gestión de reservas para guía turístico independiente.
+Viator · GetYourGuide · Civitatis · WordPress · Manual → un solo panel de control.
 
 ---
 
-## Ce que fait l'application
+## Qué hace la aplicación
 
-| Fonctionnalité | Détail |
+| Funcionalidad | Detalle |
 |---|---|
-| Dashboard | Liste de toutes tes réservations, filtrables par statut |
-| Accepter / Refuser | Un seul bouton, confirmation instantanée |
-| Anti double-booking | Si tu acceptes une réservation, toute autre demande sur le même tour à la même date est automatiquement bloquée |
-| Calendrier | Vue mensuelle et hebdomadaire, couleurs par statut |
-| Notification push Android | Tu reçois une alerte sur ton téléphone dès qu'une réservation arrive, même appli fermée |
-| Email de secours | Si les notifications push ne passent pas, un email est envoyé |
-| Simulation OTA | Tu peux créer de fausses réservations pour tester sans attendre Viator |
+| Dashboard | Lista de todas las reservas con filtros, búsqueda, ordenación y paginación |
+| Tuiles de estadísticas | Pendientes / Confirmadas / Rechazadas / Total / Bloqueados — clic para filtrar |
+| Aceptar / Rechazar | Un solo botón, confirmación instantánea |
+| Anti double-booking | Si confirmas una reserva, cualquier otra solicitud en el mismo horario se rechaza automáticamente |
+| Código de reserva | Código automático: R + tipo de ruta (C/M/L) + inicial de plataforma |
+| Nacionalidad | Bandera SVG por cliente, compatible con Windows y Android |
+| Tipo de ruta | Corta / Media / Larga, visible en cada reserva |
+| Jornada completa | Opción "Toda la jornada" para tours sin hora fija |
+| Horarios bloqueados | Bloquea días o franjas horarias donde no puedes guiar |
+| Calendário | Vistas semana / mes / día / lista, colores por estado, slots bloqueados visibles |
+| Planning | Tabla mensual de reservas confirmadas + bloqueados, navegación mes a mes |
+| Logs | Historial completo de acciones (crear, confirmar, rechazar, eliminar) |
+| Datos de demo | Carga 27 reservas + 37 bloqueados para pruebas realistas |
+| Vaciado completo | Elimina todas las reservas + bloqueados + logs con doble confirmación |
+| Notificaciones push | Alerta en el móvil Android al recibir una reserva, incluso con la app cerrada |
+| Email de respaldo | Si las notificaciones push no llegan, se envía un email |
+| PWA instalable | Se instala en Android como una app nativa |
 
 ---
 
-## Prérequis — Ce qu'il faut avoir
+## Requisitos previos
 
-Avant de commencer, vérifie que tu as :
+Antes de empezar, comprueba que tienes:
 
-- [ ] **Node.js** installé — vérifie avec `node -v` dans le terminal (doit afficher v18 ou plus)
-  - Si non : télécharge sur https://nodejs.org → prends la version "LTS"
-- [ ] **Git** installé — vérifie avec `git -v`
-  - Si non : télécharge sur https://git-scm.com
-- [ ] **Visual Studio Code** ouvert dans le dossier `Horus`
-- [ ] Un compte **GitHub** (gratuit) — https://github.com
-- [ ] Un compte **Supabase** (gratuit) — https://supabase.com
-- [ ] Un compte **Vercel** (gratuit) — https://vercel.com
+- [ ] **Node.js** instalado — verificar con `node -v` (debe mostrar v18 o superior)
+  - Si no: descargar en https://nodejs.org → versión "LTS"
+- [ ] **Git** instalado — verificar con `git -v`
+  - Si no: descargar en https://git-scm.com
+- [ ] **Visual Studio Code** abierto en la carpeta `Horus`
+- [ ] Una cuenta **GitHub** (gratuita) — https://github.com
+- [ ] Una cuenta **Supabase** (gratuita) — https://supabase.com
+- [ ] Una cuenta **Vercel** (gratuita) — https://vercel.com
 
 ---
 
-## ÉTAPE 1 — Ouvrir le terminal dans VSCode
+## PASO 1 — Abrir el terminal en VSCode
 
-Dans VSCode :
-- Menu **Terminal → New Terminal** (ou `Ctrl + J`)
-- Le terminal s'ouvre en bas. Vérifie que tu es dans le bon dossier :
+En VSCode:
+- Menú **Terminal → New Terminal** (o `Ctrl + J`)
+- El terminal se abre abajo. Verificar que estás en la carpeta correcta:
 
 ```bash
 pwd
 ```
 
-Tu dois voir quelque chose comme `/c/Users/Utilisateur/Horus`.
-Si ce n'est pas le cas :
+Debes ver algo como `/c/Users/Utilisateur/Horus`.
+Si no es el caso:
 
 ```bash
 cd /c/Users/Utilisateur/Horus
@@ -53,139 +65,113 @@ cd /c/Users/Utilisateur/Horus
 
 ---
 
-## ÉTAPE 2 — Créer la base de données Supabase
+## PASO 2 — Crear la base de datos Supabase
 
-### 2.1 Créer un projet Supabase
+### 2.1 Crear un proyecto Supabase
 
-1. Va sur https://supabase.com
-2. Clique **Start your project** → connecte-toi avec GitHub ou email
-3. Clique **New Project**
-4. Remplis :
-   - **Organization** : ton nom ou "Personnel"
-   - **Name** : `horus`
-   - **Database Password** : choisis un mot de passe fort, **note-le**, tu en auras besoin
-   - **Region** : `West EU (Ireland)` (le plus proche de l'Espagne)
-5. Clique **Create new project**
-6. Attends 2-3 minutes → tu vois une page avec un tableau de bord vert
+1. Ir a https://supabase.com
+2. Clic en **Start your project** → conectarse con GitHub o email
+3. Clic en **New Project**
+4. Rellenar:
+   - **Organization**: tu nombre o "Personal"
+   - **Name**: `horus`
+   - **Database Password**: elegir una contraseña segura y **anotarla**
+   - **Region**: `West EU (Ireland)` (el más cercano a España)
+5. Clic en **Create new project**
+6. Esperar 2-3 minutos → aparece un panel verde
 
-### 2.2 Récupérer l'URL de connexion
+### 2.2 Obtener la URL de conexión
 
-1. Dans ton projet Supabase, clique **Settings** (icône engrenage, en bas à gauche)
-2. Clique **Database**
-3. Fais défiler jusqu'à **Connection string**
-4. Choisis l'onglet **URI**
-5. Copie l'URL entière. Elle ressemble à :
+1. En tu proyecto Supabase, clic en **Settings** (icono engranaje, abajo a la izquierda)
+2. Clic en **Database**
+3. Desplazarse hasta **Connection string**
+4. Elegir la pestaña **URI**
+5. Copiar la URL completa:
 
 ```
-postgresql://postgres:[MOT_DE_PASSE]@db.abcdefghijkl.supabase.co:5432/postgres
+postgresql://postgres:[CONTRASEÑA]@db.abcdefghijkl.supabase.co:5432/postgres
 ```
 
-**Remplace `[MOT_DE_PASSE]` par le mot de passe que tu as choisi à l'étape 2.1.**
-
-Exemple réel :
-```
-postgresql://postgres:MonMotDePasse123@db.xyzxyzxyz.supabase.co:5432/postgres
-```
+**Sustituir `[CONTRASEÑA]` por la contraseña elegida en el paso 2.1.**
 
 ---
 
-## ÉTAPE 3 — Configurer l'environnement (.env)
+## PASO 3 — Configurar el entorno (.env)
 
-### 3.1 Copier le fichier de configuration
-
-Dans le terminal VSCode :
+### 3.1 Copiar el archivo de configuración
 
 ```bash
 cp .env.example .env
 ```
 
-### 3.2 Ouvrir et remplir le fichier .env
+### 3.2 Rellenar el archivo .env
 
-Dans VSCode, ouvre le fichier `.env` (clique dessus dans l'explorateur à gauche).
+Abrir `.env` en VSCode y rellenar `DATABASE_URL` con la URL del paso 2.2:
 
-Tu vois ceci :
-
-```
-DATABASE_URL="postgresql://postgres:[MOT_DE_PASSE]@db.[ID_PROJET].supabase.co:5432/postgres"
-NEXT_PUBLIC_VAPID_PUBLIC_KEY="ta_cle_publique_vapid"
-VAPID_PRIVATE_KEY="ta_cle_privee_vapid"
-VAPID_EMAIL="mailto:ton@email.com"
-...
+```env
+DATABASE_URL="postgresql://postgres:MiContraseña123@db.xyzxyz.supabase.co:5432/postgres"
 ```
 
-**Remplis uniquement la ligne `DATABASE_URL` pour l'instant** avec l'URL copiée à l'étape 2.2.
-
-Exemple :
-```
-DATABASE_URL="postgresql://postgres:MonMotDePasse123@db.xyzxyzxyz.supabase.co:5432/postgres"
-```
-
-Laisse les autres lignes vides pour l'instant.
+Dejar las demás líneas vacías por ahora.
 
 ---
 
-## ÉTAPE 4 — Installer les dépendances
-
-Dans le terminal :
+## PASO 4 — Instalar dependencias
 
 ```bash
 npm install
 ```
 
-Tu vas voir beaucoup de texte défiler. C'est normal.
-Attends que ça finisse (1-3 minutes). Tu dois voir `added XXX packages` à la fin.
+Esperar 1-3 minutos hasta ver `added XXX packages`.
 
-**Si tu vois une erreur `EACCES` ou `permission denied` :**
+**Si aparece error `EACCES` o `permission denied`:**
 ```bash
 npm install --legacy-peer-deps
 ```
 
 ---
 
-## ÉTAPE 5 — Générer les clés VAPID (notifications push)
-
-Les clés VAPID permettent à ton serveur d'envoyer des notifications push sécurisées sur Android.
+## PASO 5 — Generar las claves VAPID (notificaciones push)
 
 ```bash
 npm run generate:vapid
 ```
 
-Tu vas voir quelque chose comme :
+Aparecerá algo como:
 
 ```
-VAPID_PUBLIC_KEY=BPXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-VAPID_PRIVATE_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+VAPID_PUBLIC_KEY=BPXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+VAPID_PRIVATE_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-**Copie ces deux lignes et colle-les dans ton fichier `.env`.**
+Copiar estas dos líneas al archivo `.env`. Añadir también el email:
 
-Remplis aussi `VAPID_EMAIL` avec ton adresse email :
-
+```env
+NEXT_PUBLIC_VAPID_PUBLIC_KEY="BPXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+VAPID_PRIVATE_KEY="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+VAPID_EMAIL="mailto:tu.email@gmail.com"
 ```
-VAPID_EMAIL="mailto:ton.email@gmail.com"
-```
 
-### 5.1 Remplir OTA_WEBHOOK_SECRET
+### 5.1 Rellenar OTA_WEBHOOK_SECRET
 
-C'est un mot de passe inventé qui sécurise l'endpoint de simulation.
-Mets n'importe quelle chaîne sans espaces, par exemple :
+Es una contraseña inventada que protege el endpoint. Cualquier texto sin espacios:
 
-```
+```env
 OTA_WEBHOOK_SECRET="horus-secret-2024"
 ```
 
-### Ton .env complet doit ressembler à ça
+### Archivo .env completo
 
 ```env
-DATABASE_URL="postgresql://postgres:MonMotDePasse@db.abcdef.supabase.co:5432/postgres"
+DATABASE_URL="postgresql://postgres:MiContraseña@db.abcdef.supabase.co:5432/postgres"
 
 NEXT_PUBLIC_VAPID_PUBLIC_KEY="BPXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 VAPID_PRIVATE_KEY="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-VAPID_EMAIL="mailto:ton.email@gmail.com"
+VAPID_EMAIL="mailto:tu.email@gmail.com"
 
 OTA_WEBHOOK_SECRET="horus-secret-2024"
 
-# Ces 4 lignes sont optionnelles (email de secours) — laisse-les vides pour l'instant
+# Opcionales (email de respaldo) — dejar vacíos por ahora
 SMTP_HOST=""
 SMTP_PORT=""
 SMTP_USER=""
@@ -193,446 +179,385 @@ SMTP_PASS=""
 NOTIFY_EMAIL=""
 ```
 
-**Sauvegarde le fichier : `Ctrl + S`**
+**Guardar: `Ctrl + S`**
 
 ---
 
-## ÉTAPE 6 — Créer les tables en base de données
+## PASO 6 — Crear las tablas en la base de datos
 
 ```bash
 npx prisma db push
 ```
 
-Tu dois voir à la fin :
+Al final debes ver:
 ```
 Your database is now in sync with your Prisma schema.
 ```
 
-Si tu vois une erreur de connexion (`P1001` ou `ECONNREFUSED`) :
-- Vérifie que l'URL dans `.env` est correcte (pas d'espace, guillemets bien fermés)
-- Vérifie que tu as bien remplacé `[MOT_DE_PASSE]` dans l'URL
+Si aparece error de conexión (`P1001` o `ECONNREFUSED`):
+- Verificar que la URL en `.env` es correcta
+- Verificar que `[CONTRASEÑA]` ha sido sustituido
+- Verificar que no hay espacios ni comillas mal cerradas
 
 ---
 
-## ÉTAPE 7 — Générer les icônes PWA
+## PASO 7 — Generar los iconos PWA
 
-L'appli a besoin de deux icônes pour s'installer sur Android.
+1. En VSCode, abrir la carpeta `public/icons/`
+2. Clic derecho en `generate-icons.html` → **Reveal in File Explorer**
+3. Doble clic en `generate-icons.html` → se abre en Chrome
+4. Clic **Descargar icon-192.png** → guardar en `public/icons/`
+5. Clic **Descargar icon-512.png** → guardar en `public/icons/`
 
-1. Dans VSCode, dans l'explorateur de fichiers à gauche, ouvre le dossier `public/icons/`
-2. Clique droit sur `generate-icons.html` → **Reveal in File Explorer**
-3. Double-clique sur `generate-icons.html` → ça s'ouvre dans Chrome
-4. Clique **Télécharger icon-192.png** → sauvegarde dans `public/icons/`
-5. Clique **Télécharger icon-512.png** → sauvegarde dans `public/icons/`
-
-**Vérifie que les deux fichiers sont bien dans `public/icons/` :**
+Verificar:
 ```bash
 ls public/icons/
 ```
-Tu dois voir : `generate-icons.html  icon-192.png  icon-512.png`
+Debe mostrar: `generate-icons.html  icon-192.png  icon-512.png`
 
 ---
 
-## ÉTAPE 8 — Lancer l'application en local
+## PASO 8 — Arrancar la aplicación en local
 
 ```bash
 npm run dev
 ```
 
-Tu dois voir :
+Debes ver:
 ```
 ▲ Next.js 14.x.x
 - Local:   http://localhost:3000
 - Ready in XXXms
 ```
 
-Ouvre **http://localhost:3000** dans Chrome.
-
-Tu vois le dashboard Horus avec :
-- Le bandeau "Activer les notifications" en haut
-- Les stats (tout à zéro)
-- Le bouton "+ Simuler une réservation OTA" en bas
+Abrir **http://localhost:3000** en Chrome.
 
 ---
 
-## ÉTAPE 9 — Activer les notifications push (sur PC d'abord)
+## PASO 9 — Activar notificaciones push
 
-1. Dans Chrome, sur http://localhost:3000
-2. Clique **"Activer les notifications"**
-3. Chrome affiche un popup en haut : **"Localhost souhaite afficher des notifications"**
-4. Clique **Autoriser**
-5. Le bouton devient vert : **"✓ Activées"**
-6. Clique **"Tester"** → une notification apparaît dans le coin de l'écran
+1. En Chrome, en http://localhost:3000
+2. Clic en **"Activar notificaciones"**
+3. Chrome muestra: **"Localhost quiere mostrar notificaciones"** → **Permitir**
+4. El botón se vuelve verde: **"✓ Activadas"**
+5. Clic en **"Probar"** → aparece una notificación en la esquina
 
-**Si le popup Chrome ne s'affiche pas :**
-- Clique sur le cadenas dans la barre d'adresse
-- Cherche "Notifications" → mets sur "Autoriser"
-- Recharge la page
-
----
-
-## ÉTAPE 10 — Tester une réservation complète
-
-### 10.1 Créer une réservation simulée
-
-1. Sur http://localhost:3000
-2. Clique **"+ Simuler une réservation OTA"** (tout en bas)
-3. Le formulaire s'ouvre. Remplis :
-   - **Source** : Viator
-   - **Tour** : Randonnée Bardenas
-   - **Nom du client** : Marie Dupont
-   - **Email** : marie@example.com
-   - **Date & heure** : n'importe quelle date dans le futur
-   - **Participants** : 2
-4. Clique **"Créer la réservation"**
-
-**Résultat attendu :**
-- La réservation apparaît dans la liste avec le badge **"En attente"** et une bordure orange
-- Une notification push s'affiche sur ton écran
-
-### 10.2 Accepter la réservation
-
-1. Dans la carte de réservation, clique **"✓ Accepter"**
-2. La carte disparaît de la liste "En attente"
-3. Change le filtre en "Confirmées" → la réservation est là avec une bordure verte
-
-### 10.3 Tester l'anti double-booking
-
-1. Crée une deuxième réservation **exactement sur le même tour et la même date**
-2. Résultat : la 2ème est automatiquement créée avec le statut **"Refusée"**
-3. Un message d'erreur s'affiche si tu essaies de confirmer manuellement une réservation qui double-bookerait
-
-### 10.4 Voir le calendrier
-
-1. Clique **"Calendrier"** dans la barre de navigation en haut
-2. Tu vois les réservations sur le calendrier :
-   - Orange = En attente
-   - Vert = Confirmée
-   - Rouge = Refusée
-3. Clique sur un événement → les détails s'affichent
+**Si el popup no aparece:**
+- Clic en el candado en la barra de direcciones
+- Buscar "Notificaciones" → poner en "Permitir"
+- Recargar la página
 
 ---
 
-## ÉTAPE 11 — Créer le repo GitHub et pousser le code
+## PASO 10 — Cargar datos de demo y probar
 
-### 11.1 Créer le repo sur GitHub
+### 10.1 Cargar el juego de datos de demo
 
-1. Va sur https://github.com/Arrondiko
-2. Clique le bouton vert **"New"** (ou **"+"** en haut à droite → "New repository")
-3. Remplis :
-   - **Repository name** : `horus`
-   - **Description** : `Système de gestion des réservations touristiques`
-   - **Visibility** : Private (recommandé — ton .env ne sera pas public)
-   - **NE PAS** cocher "Add a README file" (tu en as déjà un)
-4. Clique **"Create repository"**
+1. Ir a **/logs**
+2. Clic en el botón **"Demo"**
+3. Mensaje de éxito: "27 reservas + 37 bloqueados creados"
+4. Volver al dashboard → las tuiles muestran los datos
 
-### 11.2 Pousser le code
+### 10.2 Explorar las reservas
 
-Dans le terminal VSCode (arrête `npm run dev` avec `Ctrl+C` d'abord si nécessaire) :
+- **Dashboard**: 27 reservas de Sophie Martin, Hans Müller, Carlos López...
+- **Calendario**: navegar a agosto 2026 → barras grises "Vacaciones verano"
+- **Planning**: tabla con reservas confirmadas del mes actual
+- **Logs**: historial de todas las acciones de la demo
+
+### 10.3 Crear una reserva manualmente
+
+1. En el dashboard, clic en **"+ Nueva reserva"**
+2. Rellenar: plataforma, tour, cliente, email, fecha, participantes
+3. Opcionales: nacionalidad, tipo de ruta, toda la jornada, duración, notas
+4. Clic **"Crear reserva"** → aparece como Pendiente
+
+### 10.4 Aceptar / Rechazar
+
+- En una carta "Pendiente": clic **✓ Aceptar** → pasa a Confirmada
+- En una carta "Pendiente": clic **✗ Rechazar** → pasa a Rechazada
+- Si hay conflicto de horario al aceptar: mensaje de error explicando el conflicto
+
+### 10.5 Bloquear un horario
+
+1. Ir a **/calendar** → clic **"🔒 Bloquear horario"**
+2. Elegir fecha, marcar "Toda la jornada" si es día completo
+3. Añadir un motivo (opcional)
+4. Clic **"Guardar bloqueo"** → visible en el calendario en gris
+
+---
+
+## PASO 11 — Push al repositorio GitHub
+
+El remote ya está configurado hacia `arrondiko/Horus`.
+
+### 11.1 Dar permisos de escritura (solo una vez)
+
+Desde la cuenta **arrondiko** en GitHub:
+1. Ir a https://github.com/arrondiko/Horus
+2. **Settings** → **Collaborators** → **Add people** → invitar `Alexsky00`
+3. Aceptar la invitación recibida por email
+
+### 11.2 Configurar autenticación (solo una vez)
+
+GitHub ya no acepta contraseñas — necesitas un **Personal Access Token**:
+
+1. Conectado como `arrondiko` en GitHub
+2. **Settings** → **Developer settings** → **Personal access tokens** → **Tokens (classic)**
+3. **Generate new token** → marcar `repo` → copiar el token
+4. En el terminal:
+```bash
+git config --global credential.helper wincred
+```
+5. Al hacer push, usar el token como contraseña
+
+### 11.3 Hacer push
 
 ```bash
-git init
 git add .
-git commit -m "feat: MVP Horus — gestion réservations touristiques"
-git branch -M main
-git remote add origin https://github.com/Arrondiko/horus.git
-git push -u origin main
-```
-
-Si GitHub demande tes identifiants :
-- **Username** : ton nom d'utilisateur GitHub (Arrondiko)
-- **Password** : **pas ton mot de passe GitHub** mais un **Personal Access Token**
-
-Pour créer un token :
-1. GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
-2. Generate new token → coche `repo` → Generate
-3. Copie le token et colle-le comme mot de passe
-
-Relance le dev :
-```bash
-npm run dev
+git commit -m "descripción del cambio"
+git push origin main
 ```
 
 ---
 
-## ÉTAPE 12 — Déployer sur Vercel (accès depuis ton téléphone)
+## PASO 12 — Desplegar en Vercel (acceso desde móvil)
 
-### 12.1 Connecter Vercel à GitHub
+### 12.1 Conectar Vercel a GitHub
 
-1. Va sur https://vercel.com
-2. Connecte-toi avec **GitHub** (recommandé)
-3. Clique **"Add New Project"**
-4. Dans la liste de tes repos, clique **"Import"** à côté de `horus`
-5. Vercel détecte automatiquement Next.js → ne change rien au Framework Preset
+1. Ir a https://vercel.com → conectarse con GitHub
+2. Clic **"Add New Project"** → importar `arrondiko/Horus`
+3. Vercel detecta Next.js automáticamente
 
-### 12.2 Ajouter les variables d'environnement
+### 12.2 Añadir las variables de entorno
 
-Avant de cliquer "Deploy", clique **"Environment Variables"** et ajoute **une par une** :
+Antes de hacer clic en "Deploy", añadir en **Environment Variables**:
 
-| Name | Value |
-|------|-------|
-| `DATABASE_URL` | ton URL postgresql complète |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | ta clé VAPID publique |
-| `VAPID_PRIVATE_KEY` | ta clé VAPID privée |
-| `VAPID_EMAIL` | `mailto:ton@email.com` |
-| `OTA_WEBHOOK_SECRET` | ton secret (ex: `horus-secret-2024`) |
+| Nombre | Valor |
+|--------|-------|
+| `DATABASE_URL` | tu URL postgresql completa |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | tu clave VAPID pública |
+| `VAPID_PRIVATE_KEY` | tu clave VAPID privada |
+| `VAPID_EMAIL` | `mailto:tu@email.com` |
+| `OTA_WEBHOOK_SECRET` | tu secreto |
 
-**Important :** `DATABASE_URL` et `VAPID_PRIVATE_KEY` sont sensibles → Vercel les chiffre automatiquement.
+### 12.3 Desplegar
 
-### 12.3 Déployer
+Clic **"Deploy"** → esperar 2-3 minutos.
 
-Clique **"Deploy"** → attends 2-3 minutes.
+Obtienes una URL como `https://horus-xxx.vercel.app`.
 
-Tu obtiens une URL comme `https://horus-tau.vercel.app`.
-
-**C'est cette URL que tu utiliseras sur ton téléphone Android.**
+**Cada `git push` redespliega automáticamente en 2 minutos.**
 
 ---
 
-## ÉTAPE 13 — Installer l'app sur Android et activer les notifications
+## PASO 13 — Instalar en Android y activar notificaciones
 
-### 13.1 Ouvrir l'app dans Chrome Android
+### 13.1 Abrir la app en Chrome Android
 
-1. Ouvre **Chrome** sur ton Android (pas Samsung Internet, pas Firefox — **Chrome uniquement**)
-2. Va sur ton URL Vercel (ex: `https://horus-tau.vercel.app`)
-3. Connecte-toi → tu vois le dashboard Horus
+1. Abrir **Chrome** en Android (no Samsung Internet, no Firefox — **Chrome únicamente**)
+2. Ir a la URL de Vercel (ej: `https://horus-xxx.vercel.app`)
 
-### 13.2 Installer la PWA
+### 13.2 Instalar la PWA
 
-Chrome Android va afficher une bannière en bas :
-**"Ajouter Horus à l'écran d'accueil"** → Appuie dessus → **"Ajouter"**
+Chrome Android mostrará un banner:
+**"Añadir Horus a la pantalla de inicio"** → Pulsar → **"Añadir"**
 
-Si la bannière n'apparaît pas :
-1. Appuie sur les **3 points** en haut à droite de Chrome
-2. Cherche **"Ajouter à l'écran d'accueil"**
-3. Appuie → **"Ajouter"**
+Si el banner no aparece:
+1. Pulsar los **3 puntos** arriba a la derecha
+2. Buscar **"Añadir a pantalla de inicio"**
+3. Confirmar
 
-L'icône Horus apparaît sur ton écran d'accueil comme une vraie app.
+### 13.3 Activar notificaciones en la app instalada
 
-### 13.3 Activer les notifications dans l'app installée
+1. Abrir Horus desde el icono en la pantalla de inicio
+2. Clic **"Activar notificaciones"** → **Permitir**
+3. El botón se vuelve verde: **"✓ Activadas"**
+4. Clic **"Probar"** → recibes una notificación en Android
 
-1. Ouvre l'app Horus depuis l'écran d'accueil (pas depuis Chrome)
-2. Clique **"Activer les notifications"**
-3. Android affiche : **"Horus veut vous envoyer des notifications"** → **Autoriser**
-4. Le bouton passe au vert : **"✓ Activées"**
-5. Clique **"Tester"** → tu reçois une notification sur Android
-
-**Désormais, chaque nouvelle réservation te notifie sur ton téléphone, même app fermée.**
+**A partir de ahora, cada nueva reserva te notifica en el móvil, incluso con la app cerrada.**
 
 ---
 
-## Utilisation quotidienne
-
-### Workflow normal
+## Flujo de trabajo diario
 
 ```
-Réservation reçue (Viator, GYG, etc.)
+Llega una reserva (Viator, GYG, Civitatis...)
          ↓
-Notification push sur ton Android
+Notificación push en el Android
          ↓
-Tu ouvres l'app Horus
+Abres la app Horus
          ↓
-Tu vois la réservation "En attente"
+Ves la reserva en "Pendiente"
          ↓
-Tu cliques Accepter ou Refuser
+Pulsas Aceptar o Rechazar
          ↓
-Si Accepter : le calendrier se met à jour, anti double-booking activé
+Si Aceptas → calendario actualizado, anti double-booking activo
 ```
 
-### Simuler l'arrivée d'une réservation OTA
+---
 
-Pour tester sans attendre une vraie réservation, tu peux :
-
-**Option A : depuis l'interface (le plus simple)**
-→ Clique "+ Simuler une réservation OTA" dans le dashboard
-
-**Option B : depuis le terminal (simulation webhook)**
-
-Remplace `horus-secret-2024` par ton vrai `OTA_WEBHOOK_SECRET` et l'URL Vercel par la tienne :
+## Comandos de referencia
 
 ```bash
-curl -X POST https://horus-tau.vercel.app/api/simulate-ota \
-  -H "Content-Type: application/json" \
-  -H "X-Webhook-Secret: horus-secret-2024" \
-  -d '{
-    "source": "getyourguide",
-    "guestName": "Carlos García",
-    "guestEmail": "carlos@example.com",
-    "tourName": "Bardenas Reales 4x4",
-    "date": "2024-08-10T09:00:00Z",
-    "participants": 4,
-    "notes": "Un enfant de 8 ans",
-    "externalRef": "GYG-987654"
-  }'
-```
+# Desarrollo local
+npm run dev                  # Arranca la app en http://localhost:3000
 
----
+# Base de datos
+npx prisma db push           # Sincroniza el esquema con Supabase
+npx prisma studio            # Interfaz gráfica de la base de datos (http://localhost:5555)
+npx prisma generate          # Regenerar el cliente Prisma (tras cambios en schema.prisma)
 
-## Configurer l'email de secours (optionnel)
+# Notificaciones push
+npm run generate:vapid       # Genera nuevas claves VAPID (solo si es necesario)
 
-Si tu veux recevoir un email en plus des notifications push :
-
-### Avec Gmail
-
-1. Va sur https://myaccount.google.com → Sécurité → Vérification en 2 étapes (active-la)
-2. Puis : Sécurité → Mots de passe des applications
-3. Crée un mot de passe pour "Mail / Windows"
-4. Copie le mot de passe de 16 caractères
-
-Dans ton `.env` :
-
-```env
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT="587"
-SMTP_USER="ton.email@gmail.com"
-SMTP_PASS="abcd efgh ijkl mnop"
-NOTIFY_EMAIL="ton.email@gmail.com"
-```
-
-Sur Vercel, ajoute aussi ces 5 variables dans les Environment Variables.
-
----
-
-## Explorer la base de données
-
-Prisma Studio = interface graphique pour voir/modifier les données directement :
-
-```bash
-npx prisma studio
-```
-
-Ouvre http://localhost:5555 → tu vois toutes les tables et toutes les réservations.
-
----
-
-## Commandes de référence
-
-```bash
-# Développement local
-npm run dev                  # Lance l'app sur http://localhost:3000
-
-# Base de données
-npx prisma db push           # Synchronise le schéma avec Supabase
-npx prisma studio            # Interface graphique base de données
-
-# Notifications push
-npm run generate:vapid       # Génère de nouvelles clés VAPID (seulement si besoin)
-
-# Déploiement
+# Despliegue
 git add .
-git commit -m "ma modification"
-git push                     # Vercel redéploie automatiquement en 2 minutes
+git commit -m "mi cambio"
+git push                     # Vercel redespliegue automático
 ```
 
 ---
 
-## Résolution de problèmes fréquents
+## Resolución de problemas frecuentes
 
-### "Cannot connect to database" au démarrage
-
-```
-Vérifier dans .env :
-- DATABASE_URL commence bien par postgresql://
-- Le mot de passe ne contient pas de @ ou de # (caractères spéciaux → les encoder)
-- Les guillemets sont bien présents autour de l'URL
-```
-
-### Les notifications ne fonctionnent pas sur Android
+### "Cannot connect to database" al arrancar
 
 ```
-1. Utilise Chrome (pas Samsung Internet, pas Firefox)
-2. L'app doit être ouverte depuis l'icône installée, pas depuis Chrome directement
-3. Dans Paramètres Android → Applications → Chrome ou Horus → Notifications → Activer
-4. Vérifie que NEXT_PUBLIC_VAPID_PUBLIC_KEY est identique en local et sur Vercel
+Verificar en .env:
+- DATABASE_URL empieza por postgresql://
+- La contraseña no contiene @ ni # (caracteres especiales → codificarlos)
+- Las comillas están bien cerradas
+- Sin espacios al inicio o al final
 ```
 
-### "Double booking détecté" quand j'accepte
+### Las notificaciones no funcionan en Android
 
 ```
-C'est normal : une autre réservation sur le même tour à la même date est déjà confirmée.
-Refuse l'une des deux, ou change la date.
+1. Usar Chrome (no Samsung Internet, no Firefox)
+2. Abrir la app desde el icono instalado, no desde Chrome directamente
+3. Ajustes Android → Aplicaciones → Horus → Notificaciones → Activar
+4. Verificar que NEXT_PUBLIC_VAPID_PUBLIC_KEY es idéntica en local y en Vercel
 ```
 
-### La page du calendrier est vide
+### "Conflicto de horario" al aceptar una reserva
 
 ```
-FullCalendar se charge côté client. Attends 2-3 secondes après le chargement.
-Si toujours vide, ouvre la console (F12) et cherche les erreurs.
+Normal: otra reserva en el mismo horario ya está confirmada.
+Rechazar una de las dos, o cambiar la fecha.
 ```
 
-### git push demande un mot de passe à chaque fois
+### La página del calendario está vacía
+
+```
+FullCalendar se carga en el lado cliente. Esperar 2-3 segundos.
+Si sigue vacío, abrir la consola (F12) y buscar errores en rojo.
+```
+
+### git push pide contraseña cada vez
 
 ```bash
-git config --global credential.helper store
-# Puis refais git push, entre ton token une dernière fois → mémorisé
+git config --global credential.helper wincred
+# Hacer push una vez con el token → queda guardado
+```
+
+### `npx prisma generate` falla con error EPERM
+
+```
+El servidor de desarrollo bloquea el archivo DLL de Prisma.
+1. Detener npm run dev (Ctrl+C)
+2. npx prisma generate
+3. npm run dev
 ```
 
 ---
 
-## Structure du projet — ce que fait chaque fichier
+## Estructura del proyecto
 
 ```
 horus/
 │
-├── .env                    ← TES SECRETS (ne jamais commit)
-├── .env.example            ← Template vide à partager
-├── .gitignore              ← Dit à git d'ignorer .env et node_modules
+├── .env                        ← TUS SECRETOS (nunca hacer commit)
+├── .env.example                ← Plantilla vacía para compartir
+├── .gitignore                  ← Ignora .env y node_modules
+├── RELEASE_NOTES.md            ← Historial de versiones y funcionalidades
+├── TECH_NOTES.md               ← Documentación técnica
+├── TESTS_MANUELS.md            ← Suite de tests completa (internal)
+├── TESTS_TESTER.txt            ← Ficha de tests para testeador externo
 │
 ├── prisma/
-│   └── schema.prisma       ← Définition des tables : Booking + PushSubscription
+│   └── schema.prisma           ← Modelos: Booking, BlockedSlot, Log, PushSubscription
 │
 ├── public/
-│   ├── manifest.json       ← Config PWA (nom, icônes, couleurs)
-│   ├── sw.js               ← Service Worker : cache + réception des push
+│   ├── manifest.json           ← Config PWA (nombre, iconos, colores)
+│   ├── sw.js                   ← Service Worker: caché + recepción push
 │   └── icons/
-│       ├── icon-192.png    ← Icône Android petite (À CRÉER)
-│       └── icon-512.png    ← Icône Android grande (À CRÉER)
+│       ├── icon-192.png        ← Icono Android pequeño
+│       └── icon-512.png        ← Icono Android grande
 │
 └── src/
     ├── app/
-    │   ├── layout.tsx      ← Structure globale : <html>, header, nav
-    │   ├── globals.css     ← Tailwind + thème sombre + styles FullCalendar
-    │   ├── page.tsx        ← Dashboard principal (toute la logique UI)
+    │   ├── layout.tsx          ← Estructura global: <html>, header, nav, footer (versión)
+    │   ├── globals.css         ← Tailwind + tema oscuro + estilos FullCalendar
+    │   ├── page.tsx            ← Dashboard principal
     │   ├── calendar/
-    │   │   └── page.tsx    ← Page calendrier (charge FullCalendar)
+    │   │   └── page.tsx        ← Página calendario (FullCalendar + panel lateral)
+    │   ├── planning/
+    │   │   └── page.tsx        ← Tabla mensual de reservas confirmadas
+    │   ├── logs/
+    │   │   └── page.tsx        ← Historial de acciones + zona de peligro
     │   └── api/
     │       ├── bookings/
-    │       │   ├── route.ts        ← GET /api/bookings, POST /api/bookings
-    │       │   └── [id]/route.ts   ← PATCH (accept/refuse), DELETE
-    │       ├── simulate-ota/
-    │       │   └── route.ts        ← POST /api/simulate-ota (webhook mock sécurisé)
+    │       │   ├── route.ts        ← GET / POST / DELETE (all)
+    │       │   └── [id]/route.ts   ← PATCH (aceptar/rechazar) / DELETE (one)
+    │       ├── blocked/
+    │       │   ├── route.ts        ← GET / POST / DELETE (all)
+    │       │   └── [id]/route.ts   ← DELETE (one)
+    │       ├── seed/
+    │       │   └── route.ts        ← POST: carga datos de demo
+    │       ├── logs/
+    │       │   └── route.ts        ← GET / DELETE
     │       └── push/
-    │           ├── subscribe/route.ts  ← POST/DELETE abonnements push
-    │           └── send/route.ts       ← POST envoi notification test
+    │           ├── subscribe/route.ts  ← POST/DELETE suscripciones push
+    │           └── send/route.ts       ← POST envío notificación de prueba
     │
     ├── components/
-    │   ├── BookingCard.tsx     ← Affiche une réservation (badge, boutons, couleurs)
-    │   ├── Calendar.tsx        ← Composant FullCalendar (chargé dynamiquement)
-    │   └── PushSubscribe.tsx   ← Bouton "Activer les notifications"
+    │   ├── BookingCard.tsx      ← Tarjeta de reserva (badge, botones, bandera, código)
+    │   ├── Calendar.tsx         ← Componente FullCalendar + Gantt mensual personalizado
+    │   └── PushSubscribe.tsx    ← Botón "Activar notificaciones"
     │
     └── lib/
-        ├── db.ts               ← Connexion Prisma (singleton pour éviter les fuites)
-        └── push.ts             ← Envoyer une notif push + email fallback
+        ├── db.ts               ← Conexión Prisma (singleton)
+        ├── push.ts             ← Enviar notificación push + email de respaldo
+        ├── log.ts              ← Escribir en el historial de logs
+        ├── types.ts            ← Tipos compartidos (BlockedSlot)
+        └── nationalities.ts    ← Lista de nacionalidades ISO 3166-1 + helper
 ```
 
 ---
 
-## Récapitulatif — checklist de démarrage
+## Checklist de puesta en marcha
 
 ```
-[ ] Node.js installé (node -v → v18+)
-[ ] Git installé (git -v)
-[ ] npm install → dépendances installées
-[ ] Supabase : projet créé, URL copiée
-[ ] .env rempli (DATABASE_URL + VAPID + OTA_WEBHOOK_SECRET)
-[ ] npx prisma db push → tables créées
-[ ] public/icons/icon-192.png et icon-512.png créés
-[ ] npm run dev → app sur http://localhost:3000
-[ ] Notification test réussie sur PC
-[ ] Repo GitHub créé et code poussé
-[ ] Vercel déployé avec les variables d'env
-[ ] App installée sur Android (icône sur écran d'accueil)
-[ ] Notification test réussie sur Android
-[ ] Première réservation simulée et acceptée
+[ ] Node.js instalado (node -v → v18+)
+[ ] Git instalado (git -v)
+[ ] npm install → dependencias instaladas
+[ ] Supabase: proyecto creado, URL copiada
+[ ] .env rellenado (DATABASE_URL + VAPID + OTA_WEBHOOK_SECRET)
+[ ] npx prisma db push → tablas creadas
+[ ] public/icons/icon-192.png y icon-512.png creados
+[ ] npm run dev → app en http://localhost:3000
+[ ] Notificación de prueba exitosa en PC
+[ ] Datos de demo cargados desde /logs
+[ ] Repositorio GitHub: permisos configurados, push exitoso
+[ ] Vercel desplegado con las variables de entorno
+[ ] App instalada en Android (icono en pantalla de inicio)
+[ ] Notificación de prueba exitosa en Android
+[ ] Primera reserva creada y aceptada
 ```
 
-Si toutes les cases sont cochées : **Horus est opérationnel.**
+Si todas las casillas están marcadas: **Horus está operativo.**
+
+---
+
+*Horus v1.0-Alpha — Gestión de reservas turísticas*
