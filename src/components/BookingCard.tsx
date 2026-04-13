@@ -34,6 +34,12 @@ const ROUTE_LABELS: Record<string, string> = {
   larga: "🔴 Ruta larga",
 };
 
+function bookingCode(b: Booking): string {
+  const routeChar = ({ corta: "C", media: "M", larga: "L" } as Record<string, string>)[b.routeType ?? ""] ?? "";
+  const sourceChar = b.source === "wordpress" ? "" : b.source.charAt(0).toUpperCase();
+  return "R" + routeChar + sourceChar;
+}
+
 const SOURCE_COLORS: Record<string, string> = {
   viator: "bg-emerald-700 text-emerald-100",
   getyourguide: "bg-orange-700 text-orange-100",
@@ -70,13 +76,13 @@ export default function BookingCard({
   return (
     <div className={`bg-slate-800 rounded-lg p-4 border-l-4 ${STATUS_STYLES[booking.status] ?? "border-slate-600"}`}>
       <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
-        <div>
+        <div className="flex items-center gap-2 flex-wrap">
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${SOURCE_COLORS[booking.source] ?? "bg-slate-600 text-slate-200"}`}>
             {booking.source.toUpperCase()}
           </span>
-          {booking.externalRef && (
-            <span className="ml-2 text-xs text-slate-500">{booking.externalRef}</span>
-          )}
+          <span className="font-mono font-bold text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded text-xs">
+            {bookingCode(booking)}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <StatusBadge status={booking.status} />
@@ -92,8 +98,13 @@ export default function BookingCard({
 
       <h3 className="font-semibold text-white">{booking.tourName}</h3>
       <p className="text-slate-400 text-sm">
-        {dateStr} a las {timeStr} · {booking.participants} pers.
-        {booking.duration && (
+        {dateStr}
+        {booking.allDay
+          ? <span className="ml-2 text-amber-400 font-medium">☀ Toda la jornada</span>
+          : <span> a las {timeStr}</span>
+        }
+        {" · "}{booking.participants} pers.
+        {!booking.allDay && booking.duration && (
           <span className="ml-2 text-slate-500">· {formatDuration(booking.duration)}</span>
         )}
         {booking.routeType && (

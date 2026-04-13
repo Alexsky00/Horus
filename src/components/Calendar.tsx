@@ -85,10 +85,19 @@ export default function Calendar({
   }
 
   function switchFcView(v: View) {
+    if (v !== "month" && view === "month") {
+      // B5 fix: coming from month view — navigate to the displayed month, not today
+      setFcDate(new Date(current.year, current.month, 1));
+    }
     setView(v);
     if (v !== "month" && fcRef.current) {
       fcRef.current.getApi().changeView(v === "week" ? "timeGridWeek" : "timeGridDay");
     }
+  }
+
+  // B1 fix: use local date instead of UTC to avoid timezone day shift
+  function toLocalKey(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }
 
   const MONTHS_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -175,7 +184,12 @@ export default function Calendar({
           slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
           eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
           headerToolbar={false}
-          datesSet={(info) => setFcTitle(info.view.title)}
+          datesSet={(info) => {
+            setFcTitle(info.view.title);
+            setFcDate(info.view.currentStart);
+            // B5.2: keep Gantt month in sync so switching back to "Mes" shows the right month
+            setCurrent({ year: info.view.currentStart.getFullYear(), month: info.view.currentStart.getMonth() });
+          }}
           eventContent={(arg) => {
             if (arg.event.extendedProps.isBlocked) {
               return (
@@ -222,7 +236,7 @@ export default function Calendar({
   );
   sortedForRows.forEach((b) => {
     const startDate = new Date(b.date);
-    const startKey  = startDate.toISOString().slice(0, 10);
+    const startKey  = toLocalKey(startDate);
 
     // Find first free slot on the start day
     const occupied = rowMap[startKey] ?? [];
@@ -234,7 +248,7 @@ export default function Calendar({
 
     if (b.duration) {
       const endDate = new Date(startDate.getTime() + b.duration * 60_000);
-      const endKey  = endDate.toISOString().slice(0, 10);
+      const endKey  = toLocalKey(endDate);
       if (endKey !== startKey) {
         (rowMap[endKey] ??= []).push(slot); // reserve same slot on end day
       }
@@ -245,11 +259,11 @@ export default function Calendar({
   const byDay: Record<string, DayEntry[]> = {};
   bookings.forEach((b) => {
     const startDate = new Date(b.date);
-    const startKey  = startDate.toISOString().slice(0, 10);
+    const startKey  = toLocalKey(startDate);
 
     if (b.duration) {
       const endDate = new Date(startDate.getTime() + b.duration * 60_000);
-      const endKey  = endDate.toISOString().slice(0, 10);
+      const endKey  = toLocalKey(endDate);
 
       if (endKey !== startKey) {
         (byDay[startKey] ??= []).push({ booking: b, mode: "start" });
@@ -272,7 +286,7 @@ export default function Calendar({
   // Index blocked slots par jour pour la vue mois
   const blockedByDay: Record<string, BlockedSlot[]> = {};
   blocked.forEach((bl) => {
-    const key = new Date(bl.date).toISOString().slice(0, 10);
+    const key = toLocalKey(new Date(bl.date));
     (blockedByDay[key] ??= []).push(bl);
   });
 
@@ -293,7 +307,7 @@ export default function Calendar({
           const dayNum = i - startOffset + 1;
           const isValid = dayNum >= 1 && dayNum <= daysInMonth;
           const date = isValid ? new Date(current.year, current.month, dayNum) : null;
-          const key = date ? date.toISOString().slice(0, 10) : "";
+          const key = date ? toLocalKey(date) : "";
           const dayBookings = (byDay[key] ?? []).sort(
             (a, b) => new Date(a.booking.date).getTime() - new Date(b.booking.date).getTime()
           );

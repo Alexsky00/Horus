@@ -131,6 +131,7 @@ export default function PlanningPage() {
                 <th className="text-left px-3 py-2 text-slate-400 font-medium">Fecha</th>
                 <th className="text-left px-3 py-2 text-slate-400 font-medium">Código</th>
                 <th className="text-left px-3 py-2 text-slate-400 font-medium">Tour</th>
+                <th className="text-left px-3 py-2 text-slate-400 font-medium">Cliente</th>
                 <th className="text-left px-3 py-2 text-slate-400 font-medium">Inicio</th>
                 <th className="text-left px-3 py-2 text-slate-400 font-medium">Fin</th>
                 <th className="text-left px-3 py-2 text-slate-400 font-medium">Pers.</th>
@@ -157,6 +158,7 @@ export default function PlanningPage() {
                         <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{formatDate(bl.date)}</td>
                         <td className="px-3 py-2"><span className="text-slate-600 text-xs">🔒</span></td>
                         <td className="px-3 py-2 text-slate-500 italic max-w-40 truncate">{bl.reason ?? "Bloqueado"}</td>
+                        <td className="px-3 py-2 text-slate-600">—</td>
                         <td className="px-3 py-2 text-slate-600 whitespace-nowrap font-mono text-xs">{timeStr}</td>
                         <td className="px-3 py-2 text-slate-600 whitespace-nowrap font-mono text-xs">{endStr}</td>
                         <td className="px-3 py-2 text-slate-600 text-center">—</td>
@@ -174,6 +176,7 @@ export default function PlanningPage() {
                         </span>
                       </td>
                       <td className="px-3 py-2.5 text-white font-medium max-w-40 truncate">{b.tourName}</td>
+                      <td className="px-3 py-2.5 text-slate-300 max-w-32 truncate">{b.guestName}</td>
                       <td className="px-3 py-2.5 text-slate-300 whitespace-nowrap font-mono">
                         {b.allDay ? <span className="text-amber-400 text-xs">☀ Jornada</span> : formatTime(b.date)}
                       </td>
@@ -197,7 +200,7 @@ export default function PlanningPage() {
             {filtered.length > 1 && (
               <tfoot className="bg-slate-800 border-t border-slate-600">
                 <tr>
-                  <td colSpan={5} className="px-3 py-2 text-slate-400 text-xs font-medium">Total</td>
+                  <td colSpan={6} className="px-3 py-2 text-slate-400 text-xs font-medium">Total</td>
                   <td className="px-3 py-2 text-white font-bold text-center">{totalParticipants}</td>
                   <td />
                 </tr>

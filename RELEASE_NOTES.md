@@ -2,9 +2,30 @@
 
 ---
 
+## v1.1
+_Release date: 2026-04-13_
+_Status: Stable_
+
+### Bug fixes
+- **Booking code** — auto-generated code badge (RCV, RC, RMV…) now visible on dashboard cards and in calendar side panel
+- **ExternalRef hidden** — OTA reference codes (VIA-001, GYG-xxx…) removed from all UI; stored in DB only
+- **allDay indicator** — "☀ Toda la jornada" displayed on dashboard cards and calendar side panel for all-day bookings; time no longer shown for all-day events
+- **Time selector** — `<select>` with 30-min steps (06:00–21:30) replaces `<input type="time" step=1800>` in both booking form and block form (cross-browser compatible)
+- **Timezone fix (Gantt)** — all-day events no longer appear one day off in monthly Gantt; `toLocalKey()` helper uses local date parts instead of UTC
+- **Calendar navigation** — switching views no longer resets to today; Gantt month stays in sync when navigating in week/day view
+- **Data reset** — full reset now also clears blocked slots; dashboard auto-redirects after reset
+
+### Improvement
+- **Planning** — "Cliente" column added to the confirmed bookings table
+
+### Demo data
+- 27 bookings + 35 blocked slots
+
+---
+
 ## v1.0-Alpha
 _Release date: 2026-04-12_
-_Status: Internal alpha — manual testing in progress_
+_Status: Internal alpha — superseded by v1.1_
 
 ### Features included
 - **Dashboard** — booking list with stat tiles (Pending / Confirmed / Refused / Total / Blocked), search, multi-criteria filters, quick sort, pagination

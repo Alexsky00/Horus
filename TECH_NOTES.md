@@ -2,6 +2,25 @@
 
 ---
 
+## v1.1
+_Date: 2026-04-13_
+
+### Changes from v1.0-Alpha
+
+**Timezone fix for Gantt (`toLocalKey`)**
+`toISOString()` returns UTC, which shifts dates stored at T12:00 back one day when the local timezone is UTC+. Replaced with a `toLocalKey(d: Date)` helper using `getFullYear/getMonth/getDate` throughout the Gantt rendering logic.
+
+**Calendar state sync**
+Two state systems coexist: `current` (year/month for the custom Gantt) and `fcDate` (FullCalendar API). The `datesSet` callback now updates both — `setFcDate(info.view.currentStart)` and `setCurrent({ year, month })` — so navigating in week/day view keeps the Gantt in sync when switching back to month view.
+
+**Time selector cross-browser**
+`<input type="time" step={1800}>` does not enforce 30-min steps in all browsers. Replaced with `<select>` generating options 06:00–21:30 in both the booking form (`page.tsx`) and the block form (`calendar/page.tsx`).
+
+**ExternalRef removed from UI**
+`externalRef` field (e.g. VIA-001) is stored in the DB but no longer displayed anywhere in the UI — not on booking cards, not in the calendar side panel. Only the auto-generated booking code (RCV, RC, RMV…) is visible.
+
+---
+
 ## v1.0-Alpha
 _Date: 2026-04-12_
 

@@ -1,6 +1,7 @@
 # HORUS — Suite de tests manuels
 
-> Version : 1.0-Alpha  
+> App version : 1.1  
+> Test suite : v1.2 (stable)  
 > URL locale : http://localhost:3000  
 > Légende : ✅ Passé · ❌ Échoué · ⏭ Ignoré
 
@@ -13,7 +14,7 @@
 | P1 | `npm run dev` dans le terminal | Serveur démarré sur http://localhost:3000 |
 | P2 | Ouvrir http://localhost:3000/logs | Page Logs visible |
 | P3 | Cliquer **"🗑 Vaciar toda la aplicación"** → confirmer 2× | Toast ou rechargement. Base vide |
-| P4 | Aller sur http://localhost:3000/logs → cliquer **"Demo"** | Message de succès. 27 réservations + 37 bloqueados créés |
+| P4 | Aller sur http://localhost:3000/logs → cliquer **"Demo"** | Message de succès. 27 réservations + 35 bloqueados créés |
 
 ---
 

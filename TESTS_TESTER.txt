@@ -1,9 +1,10 @@
 ================================================================
 HORUS — MANUAL TEST SHEET
-Version : 1.0-Alpha
-Tester  : ___________________________
-Date    : ___________________________
-URL     : http://[URL provided by Alexis]
+App version  : 1.1
+Test suite   : v1.1 (updated)
+Tester       : ___________________________
+Date         : ___________________________
+URL          : http://[URL provided by Alexis]
 ================================================================
 
 INSTRUCTIONS
@@ -23,7 +24,7 @@ SETUP — do this first
 
 [ ] P1  Go to the provided URL → page loads without errors
 [ ] P2  Go to /logs → click "Demo" → success message:
-        "27 reservas + 37 bloqueados"
+        "27 reservas + 35 bloqueados"
 
 ================================================================
 1. DASHBOARD (main page)
@@ -42,9 +43,9 @@ SETUP — do this first
 
 --- Search ---
 [ ] 1.8  Type "Sophie" → only Sophie Martin (Bardenas Reales, Viator) appears
-[ ] 1.9  Type "Bardenas" → 6 bookings visible (Sophie Martin, Maria Rossi,
+[ ] 1.9  Type "Bardenas" → 9 bookings visible (Sophie Martin, Maria Rossi,
          Pieter van Dam, Antoine Dubois, Isabel García, Yuki Tanaka,
-         Giulia Ferrari, Pablo Moreno)
+         Giulia Ferrari, Pablo Moreno, Laura Fernández "Noche en Bardenas")
 [ ] 1.10 Type "mail.de" → Hans Müller + Klaus Weber + Stefan Bauer appear
 [ ] 1.11 Clear the search → all 27 bookings come back
 
@@ -64,7 +65,8 @@ SETUP — do this first
          First entry should be Sophie Martin (soonest date)
 [ ] 1.19 Click "Fecha" again → reversed, Ana Martínez last entry first
 [ ] 1.20 Click "Pers." → sorted by participants ascending (2 → 15)
-         James Smith & Pieter van Dam & Amélie Bernard (2 each) at the top
+         Bookings with 2 participants appear at the top (James Smith, Pieter van Dam, Amélie Bernard)
+         Yuki Tanaka (12) and Michael Davis (15) appear at the bottom
 
 --- Pagination ---
 [ ] 1.21 15 bookings shown on page 1, remaining on page 2
@@ -77,11 +79,11 @@ SETUP — do this first
 [ ] 1.26 Sophie Martin card (Confirmada): no Aceptar/Rechazar buttons
 [ ] 1.27 James Smith card (Rechazada): red colour, no Aceptar/Rechazar buttons
 [ ] 1.28 Carlos López card: flag is a small image (not the letters "ES")
-[ ] 1.29 Sophie Martin booking code shows: RCV
+[ ] 1.29 Sophie Martin card: amber badge "RCV" visible next to VIATOR badge
          (R = booking, C = Corta, V = Viator)
-[ ] 1.30 Maria Rossi booking code shows: RC
+[ ] 1.30 Maria Rossi card: amber badge "RC" visible next to WORDPRESS badge
          (R = booking, C = Corta, no letter for WordPress)
-[ ] 1.31 Carlos López card shows "Toda la jornada" (full day, no time)
+[ ] 1.31 Carlos López card shows "☀ Toda la jornada" in amber (no time shown)
 [ ] 1.32 Hans Müller card shows note: "Grupo con niños"
 
 ================================================================
@@ -124,7 +126,7 @@ SETUP — do this first
 [ ] 4.2  Click "Mes" → monthly Gantt view
 [ ] 4.3  Click "Semana" → weekly view
 [ ] 4.4  Click "Día" → daily view
-[ ] 4.5  Click "Lista" → list view
+[ ] 4.5  Only 3 view buttons visible: Mes / Semana / Día (no "Lista" button)
 
 --- Navigation ---
 [ ] 4.6  Click ‹ → previous week/month/day (depending on view)
@@ -144,7 +146,6 @@ SETUP — do this first
          - Email: sophie.martin@mail.fr (clickable)
          - Participants: 3 pers.
          - Tipo ruta: Corta
-         - Ref. OTA: VIA-001
 [ ] 4.14 Click × on the panel → panel closes
 [ ] 4.15 Carlos López entry shows "Toda la jornada" (all day bar, no time)
 [ ] 4.16 Monthly Gantt: Laura Fernández (Noche en Bardenas, 20:00, 8h)
@@ -158,8 +159,7 @@ SETUP — do this first
          grey block on Sept 15 for 4h (Formación guías turísticos)
 [ ] 4.19 Navigate to 5 October 2026 (daily view) →
          grey block at 09:00 for 2h (Cita médica)
-[ ] 4.20 List view: blocked slots do NOT appear in the list
-         (only Sophie Martin, Hans Müller... no "Vacaciones verano")
+[ ] 4.20 SKIP — list view removed from the app
 [ ] 4.21 Click a blocked slot (e.g. grey bar in weekly view) →
          side panel shows: "Bloqueado" + reason + date
 [ ] 4.22 In the panel, click "Eliminar bloqueo" → slot disappears from calendar
@@ -178,7 +178,7 @@ SETUP — do this first
 ================================================================
 
 [ ] 5.1  Page shows a table with confirmed bookings for the current month
-[ ] 5.2  Columns: Fecha / Código / Tour / Inicio / Fin / Pers. / Nacionalidad
+[ ] 5.2  Columns visible: Fecha / Código / Tour / Cliente / Inicio / Fin / Pers. / Nacionalidad
 [ ] 5.3  Sophie Martin row: code = RCV, Tour = Bardenas Reales, flag visible
 [ ] 5.4  Carlos López row: code = RLC, Inicio = "☀ Jornada", Fin = "—"
 [ ] 5.5  Yuki Tanaka does NOT appear (status = pending, not confirmed)

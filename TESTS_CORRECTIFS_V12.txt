@@ -1,0 +1,140 @@
+================================================================
+HORUS — CORRECTIVE TEST SHEET
+App version  : 1.0-Alpha
+Test suite   : v1.2 (post-bugfix — 4 issues fixed)
+Tester       : ___________________________
+Date         : ___________________________
+URL          : http://[URL provided by Alexis]
+================================================================
+
+PURPOSE
+-------
+These tests verify the 4 issues fixed after the second test session
+(2026-04-13). Run these AFTER loading the demo data.
+
+For each test, replace [ ] with:
+  [OK]   = fixed, works correctly
+  [NOK]  = still broken
+  [?]    = could not test
+
+If NOK, add a short note after the line.
+
+================================================================
+SETUP
+================================================================
+
+[ ] S1  Go to /logs → click "Demo" → success message:
+        "27 reservas + 35 bloqueados"
+[ ] S2  Dashboard shows: Pendientes=7 · Confirmadas=16 ·
+        Rechazadas=4 · Total=27
+
+================================================================
+B2.1 — ExternalRef code (VIA-001) visible on booking cards
+================================================================
+
+[ ] B2.1.1  On the dashboard, find Sophie Martin's card (Viator,
+            Bardenas Reales)
+            → Only ONE code badge visible: amber badge "RCV"
+            → "VIA-001" does NOT appear anywhere on the card
+
+[ ] B2.1.2  Find Carlos López's card (Civitatis, Sierra de Urbasa)
+            → Only badge visible: amber "RLC"
+            → "CIV-003" does NOT appear
+
+[ ] B2.1.3  Find Emma Johnson's card (Viator, Ruta del Vino)
+            → Only badge visible: amber "RMV"
+            → "VIA-007" does NOT appear
+
+================================================================
+B4.2 — Time selector not locking to 30-min intervals
+================================================================
+
+[ ] B4.2.1  Click "+ Nueva reserva" to open the form
+            → The "Hora" field is a DROPDOWN (not a text input)
+            → The dropdown shows options like: 06:00, 06:30,
+              07:00, 07:30 ... 21:00, 21:30
+
+[ ] B4.2.2  Open the dropdown
+            → Only 30-minute steps are selectable
+            → Cannot type or freely enter a custom time
+            → First option is 06:00, last option is 21:30
+
+[ ] B4.2.3  Check "Toda la jornada"
+            → "Hora" dropdown disappears (only "Fecha" remains)
+
+[ ] B4.2.4  Uncheck "Toda la jornada"
+            → "Hora" dropdown reappears
+
+================================================================
+B5.2 — Gantt month not synced after navigating in week/day view
+================================================================
+
+[ ] B5.2.1  Go to /calendar → click "Mes"
+            → Navigate to August 2026 using ‹ ›
+            → Click "Semana" → you land in August 2026 (not today)
+            → Click "Mes" again
+            → Monthly Gantt shows AUGUST 2026 (not April/today)
+
+[ ] B5.2.2  In weekly view, navigate forward to October 2026
+            → Click "Mes"
+            → Gantt shows OCTOBER 2026
+
+[ ] B5.2.3  In weekly view, navigate forward to December 2026
+            → Click "Semana" then "Mes"
+            → Gantt shows DECEMBER 2026, not today's month
+
+[ ] B5.2.4  In daily view, navigate to September 2026
+            → Click "Mes"
+            → Gantt shows SEPTEMBER 2026
+
+================================================================
+N1 — Calendar side panel showing "12:00" for allDay bookings
+================================================================
+
+[ ] N1.1  Go to /calendar → week or day view
+          Navigate to the week containing Carlos López (allDay,
+          Sierra de Urbasa, d+3 from today)
+          → Click his all-day event bar
+          → Side panel shows "☀ Toda la jornada" in amber
+          → "12:00" does NOT appear anywhere in the panel
+
+[ ] N1.2  Navigate to the week containing João Silva (allDay,
+          Sierra de Urbasa, d+9 from today)
+          → Click his event
+          → Panel shows "☀ Toda la jornada", no time shown
+
+[ ] N1.3  Click Sophie Martin's event (NOT allDay, 09:00)
+          → Panel shows a time (09:00), NOT "Toda la jornada"
+          → Confirms normal bookings still display time correctly
+
+================================================================
+REGRESSION CHECK
+(Verify nothing broke that was working before)
+================================================================
+
+[ ] R1  Booking cards still show the correct amber code badge
+        (RCV, RC, RLC, RM, RV...)
+[ ] R2  "Toda la jornada" label still shows on allDay cards
+        in the dashboard (Carlos López, Yuki Tanaka...)
+[ ] R3  Calendar weekly view: bookings visible with correct colours
+[ ] R4  Planning: all 8 columns still present
+        (Fecha / Código / Tour / Cliente / Inicio / Fin / Pers. / Nacionalidad)
+[ ] R5  Navigate August 2026 monthly Gantt →
+        grey bars on Aug 3–7 and Aug 10–14 (Vacaciones verano)
+[ ] R6  Search still works: "Bardenas" → 9 bookings
+
+================================================================
+SUMMARY
+================================================================
+
+Tests:  OK [   ]   NOK [   ]   Not tested [   ]
+
+REMAINING ISSUES (number + description):
+-----------------------------------------
+1.
+2.
+3.
+
+================================================================
+Thank you! Please send this filled file back to Alexis.
+================================================================

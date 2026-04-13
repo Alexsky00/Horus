@@ -44,7 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
         <main className="max-w-5xl mx-auto px-4 py-6">{children}</main>
         <footer className="border-t border-slate-800 mt-8 py-3 text-center">
-          <span className="text-slate-600 text-xs">Horus v1.0-Alpha</span>
+          <span className="text-slate-600 text-xs">Horus v1.1</span>
         </footer>
       </body>
     </html>

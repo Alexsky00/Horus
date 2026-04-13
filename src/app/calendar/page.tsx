@@ -162,9 +162,16 @@ export default function CalendarPage() {
             {!blockForm.allDay && <>
               <div>
                 <label className="text-xs text-slate-400 block mb-1">Hora inicio</label>
-                <input type="time" step={1800} value={blockForm.time}
+                <select value={blockForm.time}
                   onChange={(e) => setBlockForm({ ...blockForm, time: e.target.value })}
-                  className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
+                  {Array.from({ length: 32 }, (_, i) => {
+                    const h = Math.floor(i / 2) + 6;
+                    const m = i % 2 === 0 ? "00" : "30";
+                    const val = `${String(h).padStart(2, "0")}:${m}`;
+                    return <option key={val} value={val}>{val}</option>;
+                  })}
+                </select>
               </div>
               <div>
                 <label className="text-xs text-slate-400 block mb-1">Duración</label>
@@ -222,10 +229,15 @@ export default function CalendarPage() {
             {/* Date + heure + durée */}
             <p className="text-slate-400 text-sm mb-3">
               {dateStr}<br />
-              {timeStr}
-              {selected.duration && (
-                <span className="ml-2 text-slate-500">· {formatDuration(selected.duration)}</span>
-              )}
+              {selected.allDay
+                ? <span className="text-amber-400 font-medium">☀ Toda la jornada</span>
+                : <>
+                    {timeStr}
+                    {selected.duration && (
+                      <span className="ml-2 text-slate-500">· {formatDuration(selected.duration)}</span>
+                    )}
+                  </>
+              }
             </p>
 
             <hr className="border-slate-700 mb-3" />
@@ -255,12 +267,6 @@ export default function CalendarPage() {
                   <span className="text-slate-200">
                     {{ corta: "🟢 Corta", media: "🟡 Media", larga: "🔴 Larga" }[selected.routeType] ?? selected.routeType}
                   </span>
-                </div>
-              )}
-              {selected.externalRef && (
-                <div className="flex gap-2">
-                  <span className="text-slate-500 w-24 flex-shrink-0">Ref. OTA</span>
-                  <span className="text-slate-400 text-xs">{selected.externalRef}</span>
                 </div>
               )}
             </div>

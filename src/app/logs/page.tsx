@@ -68,6 +68,8 @@ export default function LogsPage() {
     await fetch("/api/logs", { method: "DELETE" });
     setResetting(false);
     fetchLogs();
+    // B6: redirect to dashboard so all tiles (incl. Bloqueados) refresh
+    window.location.href = "/";
   }
 
   const displayed = logs.filter((l) => {

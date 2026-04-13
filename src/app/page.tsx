@@ -489,14 +489,29 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
                 className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
             </div>
             <div>
-              <label className="text-xs text-slate-400 block mb-1">Fecha{form.allDay ? "" : " y hora"}</label>
+              <label className="text-xs text-slate-400 block mb-1">Fecha</label>
               <input
-                type={form.allDay ? "date" : "datetime-local"}
-                value={form.allDay ? form.date.slice(0, 10) : form.date}
-                onChange={(e) => setForm({ ...form, date: form.allDay ? e.target.value + "T00:00" : e.target.value })}
-                step={form.allDay ? undefined : 1800}
+                type="date"
+                value={form.date.slice(0, 10)}
+                onChange={(e) => setForm({ ...form, date: e.target.value + "T" + (form.date.slice(11, 16) || "09:00") })}
                 className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
             </div>
+            {!form.allDay && (
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Hora</label>
+              <select
+                value={form.date.slice(11, 16) || "09:00"}
+                onChange={(e) => setForm({ ...form, date: form.date.slice(0, 10) + "T" + e.target.value })}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
+                {Array.from({ length: 32 }, (_, i) => {
+                  const h = Math.floor(i / 2) + 6;
+                  const m = i % 2 === 0 ? "00" : "30";
+                  const val = `${String(h).padStart(2, "0")}:${m}`;
+                  return <option key={val} value={val}>{val}</option>;
+                })}
+              </select>
+            </div>
+            )}
             <div>
               <label className="text-xs text-slate-400 block mb-1">Participantes</label>
               <input type="number" min="1" value={form.participants} onChange={(e) => setForm({ ...form, participants: e.target.value })}

@@ -1,0 +1,183 @@
+================================================================
+HORUS — CORRECTIVE TEST SHEET
+App version  : 1.0-Alpha
+Test suite   : v1.1 (post-bugfix — 6 bugs fixed)
+Tester       : ___________________________
+Date         : ___________________________
+URL          : http://[URL provided by Alexis]
+================================================================
+
+PURPOSE
+-------
+These tests verify the 6 bugs fixed after the first test session
+(2026-04-12). Run these AFTER loading the demo data.
+
+For each test, replace [ ] with:
+  [OK]   = fixed, works correctly
+  [NOK]  = still broken
+  [?]    = could not test
+
+If NOK, add a short note after the line.
+
+================================================================
+SETUP
+================================================================
+
+[ ] S1  Go to /logs → click "Demo" → success message:
+        "27 reservas + 35 bloqueados"
+[ ] S2  Dashboard shows: Pendientes=7 · Confirmadas=16 ·
+        Rechazadas=4 · Total=27
+
+================================================================
+B1 — Monthly Gantt: events appearing on the wrong day (1 day off)
+================================================================
+
+[ ] B1.1 Go to /calendar → click "Mes"
+         Navigate to the current month
+         → Carlos López (Sierra de Urbasa, allDay) appears on the
+           CORRECT day, not the day after
+
+[ ] B1.2 Still in monthly view, navigate to August 2026
+         → "Vacaciones verano" grey bars appear on Aug 3, 4, 5, 6, 7
+           and Aug 10, 11, 12, 13, 14
+         → NOT starting from Aug 4 or Aug 11
+
+[ ] B1.3 Navigate to the current month in monthly view
+         → Laura Fernández "Noche en Bardenas" (20:00, 8h) starts
+           on the correct day (not the day after)
+
+================================================================
+B2 — Booking code missing from dashboard cards
+================================================================
+
+[ ] B2.1 On the dashboard, find Sophie Martin's card
+         → An amber badge shows "RCV" between the VIATOR badge
+           and the status badge
+         → NOT showing "VIA-001" in the code position
+
+[ ] B2.2 Find Maria Rossi's card (WordPress, Bardenas Reales)
+         → Amber badge shows "RC"
+           (no letter for WordPress source)
+
+[ ] B2.3 Find Carlos López's card (Civitatis, larga)
+         → Amber badge shows "RLC"
+
+[ ] B2.4 Find James Smith's card (Manual, no route type)
+         → Amber badge shows "RM"
+           (R + no route char + M for Manual)
+
+[ ] B2.5 Find Antoine Dubois's card (Viator, no route type)
+         → Amber badge shows "RV"
+
+================================================================
+B3 — "Toda la jornada" not shown on cards
+================================================================
+
+[ ] B3.1 Find Carlos López's card (allDay booking)
+         → Shows "☀ Toda la jornada" in amber text
+         → Does NOT show a time like "08:00"
+
+[ ] B3.2 Find Yuki Tanaka's card (allDay, pending)
+         → Same: "☀ Toda la jornada" visible, no time
+
+[ ] B3.3 Find Sophie Martin's card (NOT allDay, 09:00)
+         → Shows "a las 09:00" normally (no allDay label)
+
+================================================================
+B4 — Time selector allowing any minute (not locked to 30 min)
+================================================================
+
+[ ] B4.1 Click "+ Nueva reserva" to open the form
+         → Two separate fields visible: "Fecha" (date) and "Hora" (time)
+         → NOT a single datetime-local field
+
+[ ] B4.2 Click on the "Hora" field
+         → Dropdown/spinner steps in 30-minute intervals:
+           09:00 → 09:30 → 10:00 → 10:30...
+         → Cannot type or scroll to 09:13 or 09:47
+
+[ ] B4.3 Check "Toda la jornada"
+         → "Hora" field disappears (only "Fecha" remains)
+
+[ ] B4.4 Uncheck "Toda la jornada"
+         → "Hora" field reappears
+
+================================================================
+B5 — Calendar view switch jumping to today instead of current period
+================================================================
+
+[ ] B5.1 In /calendar monthly view, navigate to August 2026
+         → Click "Semana" (week view)
+         → Week view opens somewhere in August 2026
+         → NOT jumping back to today (April 2026)
+
+[ ] B5.2 In weekly view, navigate to September 2026
+         → Click "Mes" (month view)
+         → Click "Semana" again
+         → Should return to approximately September 2026,
+           not jump to today
+
+[ ] B5.3 Navigate to October 2026 in weekly view
+         → Click "Día" (daily view)
+         → Daily view opens somewhere in October 2026,
+           not today
+
+================================================================
+B6 — Bloqueados tile not updating after full reset
+================================================================
+
+[ ] B6.1 Go to /logs
+         → Click "Vaciar toda la aplicación"
+         → Confirm both prompts
+         → Page automatically redirects to the dashboard (/)
+
+[ ] B6.2 On the dashboard after redirect:
+         → Pendientes = 0
+         → Confirmadas = 0
+         → Rechazadas = 0
+         → Total = 0
+         → Bloqueados tile = 0
+
+================================================================
+A1 — Client name column missing from Planning
+================================================================
+
+[ ] A1.1 Go to /planning
+         Load demo data first if needed (/logs → Demo)
+         → Table has 8 columns:
+           Fecha / Código / Tour / Cliente / Inicio / Fin / Pers. / Nacionalidad
+
+[ ] A1.2 Each confirmed booking row shows the guest name in the
+         "Cliente" column
+         → Sophie Martin visible in the Cliente column
+         → Carlos López visible in the Cliente column
+
+[ ] A1.3 Blocked slot rows show "—" in the Cliente column
+
+================================================================
+REGRESSION CHECK
+(Verify nothing broke that was working before)
+================================================================
+
+[ ] R1  Dashboard loads with all 27 bookings after loading demo
+[ ] R2  Accepting a booking still works (Aceptar button on a pending card)
+[ ] R3  Calendar weekly view: bookings still visible with correct colours
+[ ] R4  Calendar monthly view: clicking a day still opens daily view
+[ ] R5  Planning: month navigation (‹ ›) still works
+[ ] R6  Search "Sophie" still returns only Sophie Martin
+
+================================================================
+SUMMARY
+================================================================
+
+Tests:  OK [   ]   NOK [   ]   Not tested [   ]
+
+REMAINING ISSUES (number + description):
+-----------------------------------------
+1.
+2.
+3.
+
+================================================================
+Thank you! Please send this filled file back to Alexis.
+================================================================

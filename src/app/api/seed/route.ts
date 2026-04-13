@@ -251,7 +251,7 @@ export async function POST() {
       data: {
         action: "created",
         bookingId: null,
-        details: `[DEMO] Jeu de données généré : ${bookings.length} reservas + ${blockedSlots.length} horarios bloqueados`,
+        details: `[DEMO] Datos de demo cargados : ${bookings.length} reservas + ${blockedSlots.length} bloqueados`,
       },
     });
 
