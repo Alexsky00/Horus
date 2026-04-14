@@ -52,7 +52,7 @@ export default function PlanningPage() {
     bookings.forEach((b) => set.add(new Date(b.date).getFullYear()));
     blocked.forEach((bl) => set.add(new Date(bl.date).getFullYear()));
     set.add(now.getFullYear());
-    return [...set].sort();
+    return Array.from(set).sort();
   }, [bookings, blocked]);
 
   // Réservations filtrées pour le mois sélectionné
