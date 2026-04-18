@@ -48,6 +48,18 @@ _Dernière mise à jour : 2026-04-18_
 
 ---
 
+## 📱 Distribution mobile (non planifiée)
+
+| # | Option | Description | Complexité | Prérequis | Statut |
+|---|--------|-------------|------------|-----------|--------|
+| MOB1 | TWA sideload (sans Play Store) | Générer un APK avec Bubblewrap CLI, transférer sur le téléphone et installer directement (sources inconnues). L'APK charge l'URL Vercel — pas besoin de le regénérer à chaque mise à jour de l'app. | Faible | Java JDK 8+, Android SDK (téléchargés automatiquement par Bubblewrap), 0 € | ⬜ À faire |
+| MOB2 | TWA Play Store | Même APK que MOB1, soumis sur la Play Console. Ajouter `assetlinks.json` sur Vercel pour la validation Google. | Faible + | Compte Google Play Developer (25 $ unique) | ⬜ À faire |
+| MOB3 | App Store iOS (Capacitor) | Encapsule le frontend Next.js dans une app native iOS/Android. Build statique requis, API routes restent sur Vercel. | Moyenne | Compte Apple Developer (99 €/an) + Mac pour build Xcode | ⬜ À faire |
+
+**Recommandation :** MOB1 en priorité — 0 €, rapide, et l'APK n'a pas à être regénéré à chaque update Vercel. MOB2 si publication publique souhaitée ensuite.
+
+---
+
 ## 🔌 Intégrations plateformes (non planifiées)
 
 Objectif : les réservations Viator / GetYourGuide / Civitatis / WordPress alimentent Horus automatiquement, sans saisie manuelle.
@@ -96,4 +108,5 @@ Chaque endpoint doit valider une clé secrète (header `X-Webhook-Secret` ou HMA
 | **v1.2 stable** (2026-04-14) | form time init | allDay conflict + blocs 06–22 + couleur | — |
 | **v1.3 stable** (2026-04-15) | — | I1 I2 I3 I4 I5 + champ tél | — |
 | **v1.4 stable** (2026-04-18) | — | Release notes cliquables dans le footer | — |
-| **Total** | **13** | **9** | **4** |
+| **v1.5 stable** (2026-04-18) | flash thème | 6 palettes de couleurs depuis Admin | — |
+| **Total** | **14** | **10** | **4** |

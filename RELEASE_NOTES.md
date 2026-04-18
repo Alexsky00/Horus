@@ -2,6 +2,16 @@
 
 ---
 
+## v1.5
+_Release date: 2026-04-18_
+_Status: Stable_
+
+### Improvements
+- **Color themes** — 6 palettes selectable from the Admin menu: Noche (default slate), Océano (teal), Bosque (green), Vino (purple), Desierto (warm brown), Ártico (blue). Applied instantly without page reload, persisted in DB.
+- **No theme flash** — inline script in `<head>` applies the theme before first paint on every page navigation.
+
+---
+
 ## v1.4
 _Release date: 2026-04-18_
 _Status: Stable_

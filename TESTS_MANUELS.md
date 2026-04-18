@@ -1,7 +1,7 @@
 # HORUS — Suite de tests manuels
 
-> App version : 1.4  
-> Test suite : v1.4 (stable)  
+> App version : 1.5  
+> Test suite : v1.5 (stable)  
 > URL locale : http://localhost:3000  
 > Légende : ✅ Passé · ❌ Échoué · ⏭ Ignoré
 

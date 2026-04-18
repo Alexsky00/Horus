@@ -2,6 +2,24 @@
 
 ---
 
+## v1.5
+_Date: 2026-04-18_
+
+### Changes from v1.4
+
+**Color themes**
+6 palettes defined as CSS custom properties (`--bg`, `--surface`, `--surface2`, `--border`, `--border2`, `--btn`, `--accent`, `--accent-fg`) in `globals.css`. Theme overrides target `[data-theme="id"]` and also override the most common hardcoded Tailwind classes (`bg-slate-800`, `bg-slate-900`, `bg-slate-700`, border variants) via `!important` to avoid refactoring all components.
+
+FullCalendar buttons and "now" indicator follow `var(--accent)`.
+
+**ThemeLoader** (`src/components/ThemeLoader.tsx`) — client component mounted in layout. Fetches `/api/settings` on mount and applies `data-theme` attribute on `<html>`. Also updates `localStorage` for subsequent page loads.
+
+**No-flash script** — inline `<script>` in `<head>` reads `localStorage.getItem('horus-theme')` synchronously before browser paint and sets `data-theme` on `<html>`. Eliminates the flash of default theme on page navigation.
+
+**Theme persistence** — selected theme stored in `Setting` table under key `theme.id`. Saved immediately on click in Admin, applied to `document.documentElement` without reload.
+
+---
+
 ## v1.4
 _Date: 2026-04-18_
 

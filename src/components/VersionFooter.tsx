@@ -3,6 +3,21 @@ import { useState } from "react";
 
 const RELEASE_NOTES: { version: string; date: string; status: string; sections: { title: string; items: string[] }[] }[] = [
   {
+    version: "v1.5",
+    date: "2026-04-18",
+    status: "Stable",
+    sections: [
+      {
+        title: "Mejoras",
+        items: [
+          "Temas de colores — 6 palettes configurables depuis le menu Admin : Noche, Océano, Bosque, Vino, Desierto, Ártico",
+          "Application immédiate sans rechargement + sauvegardé en base",
+          "Correction flash — le thème est appliqué avant le premier rendu (script inline dans <head>)",
+        ],
+      },
+    ],
+  },
+  {
     version: "v1.4",
     date: "2026-04-18",
     status: "Stable",
@@ -116,7 +131,7 @@ export default function VersionFooter() {
           onClick={() => setOpen(true)}
           className="text-slate-600 text-xs hover:text-slate-400 transition-colors cursor-pointer"
         >
-          Horus v1.4
+          Horus v1.5
         </button>
       </footer>
 
