@@ -2,6 +2,31 @@
 
 ---
 
+## v1.4
+_Release date: 2026-04-18_
+_Status: Stable_
+
+### Improvement
+- **Release notes** — clicking the version number in the footer opens a modal showing the full version history
+
+---
+
+## v1.3
+_Release date: 2026-04-15_
+_Status: Stable_
+
+### Improvements
+- **Phone field** — optional phone number on bookings (cards, calendar panel, forms, demo data)
+- **Calendar search** — quick search bar filters events by guest name, tour name, or booking code
+- **Calendar status filter** — Todos / Pendiente / Confirmada / Rechazada buttons above the calendar
+- **Dashboard all-day filter** — "☀ Solo jornada completa" toggle in the filter panel
+- **Block form date pre-fill** — "Bloquear horario" form pre-fills with the date visible in the current calendar view
+- **Create booking from calendar** — clicking a time slot in week/day view opens the booking form pre-filled with date and time
+- **Planning — grouped blocked slots** — consecutive allDay blocked slots with same reason merged into one row (e.g. "3 may – 14 may")
+- **Week/day view** — removed "all day" header row; event labels wrap to two lines without overflowing adjacent columns
+
+---
+
 ## v1.2
 _Release date: 2026-04-14_
 _Status: Stable_

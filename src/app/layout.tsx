@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "flag-icons/css/flag-icons.min.css";
+import VersionFooter from "@/components/VersionFooter";
 
 export const metadata: Metadata = {
   title: "Horus — Reservas",
@@ -43,9 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </nav>
         </header>
         <main className="max-w-5xl mx-auto px-4 py-6">{children}</main>
-        <footer className="border-t border-slate-800 mt-8 py-3 text-center">
-          <span className="text-slate-600 text-xs">Horus v1.3</span>
-        </footer>
+        <VersionFooter />
       </body>
     </html>
   );

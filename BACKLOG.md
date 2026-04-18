@@ -1,5 +1,5 @@
 # Horus — Backlog
-_Dernière mise à jour : 2026-04-15_
+_Dernière mise à jour : 2026-04-18_
 
 ---
 
@@ -48,6 +48,32 @@ _Dernière mise à jour : 2026-04-15_
 
 ---
 
+## 🔌 Intégrations plateformes (non planifiées)
+
+Objectif : les réservations Viator / GetYourGuide / Civitatis / WordPress alimentent Horus automatiquement, sans saisie manuelle.
+
+### Approche recommandée (par ordre de priorité)
+
+| # | Source | Mécanisme | Complexité | Statut |
+|---|--------|-----------|------------|--------|
+| INT1 | WordPress | Webhook natif plugin → `POST /api/webhooks/wordpress` | Moyenne | ⬜ À faire |
+| INT2 | Viator / GYG / Civitatis | Email booking → Zapier/Make → `POST /api/bookings` | Moyenne | ⬜ À faire |
+| INT3 | Viator | API officielle Viator (accès partenaire requis) | Haute | ⬜ À faire |
+| INT4 | GetYourGuide | API officielle GYG (accès partenaire requis) | Haute | ⬜ À faire |
+
+### Fichiers à créer dans Horus
+
+| Fichier | Rôle |
+|---------|------|
+| `src/app/api/webhooks/wordpress/route.ts` | Endpoint réception WordPress |
+| `src/app/api/webhooks/viator/route.ts` | Endpoint réception Viator |
+| `src/app/api/webhooks/getyourguide/route.ts` | Endpoint réception GYG |
+| `src/lib/webhook-parsers.ts` | Normalisation des formats → modèle Booking |
+
+Chaque endpoint doit valider une clé secrète (header `X-Webhook-Secret` ou HMAC) avant d'insérer en base.
+
+---
+
 ## 💡 Idées livrées
 
 | # | Réf. test | Écran | Idée | Complexité | Statut |
@@ -69,4 +95,5 @@ _Dernière mise à jour : 2026-04-15_
 | v1.3 → **v1.1 stable** (2026-04-13) | B2.2, B4.3 | — | — |
 | **v1.2 stable** (2026-04-14) | form time init | allDay conflict + blocs 06–22 + couleur | — |
 | **v1.3 stable** (2026-04-15) | — | I1 I2 I3 I4 I5 + champ tél | — |
-| **Total** | **13** | **8** | **4** |
+| **v1.4 stable** (2026-04-18) | — | Release notes cliquables dans le footer | — |
+| **Total** | **13** | **9** | **4** |

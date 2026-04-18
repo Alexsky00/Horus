@@ -2,6 +2,16 @@
 
 ---
 
+## v1.4
+_Date: 2026-04-18_
+
+### Changes from v1.3
+
+**VersionFooter client component**
+`src/components/VersionFooter.tsx` — composant `"use client"` extrait du layout. Remplace le `<span>` statique du footer par un `<button>` qui ouvre une modale contenant les release notes de toutes les versions. La modale est en bottom-sheet sur mobile (arrondie en haut), centrée sur desktop. Les release notes sont inlinées dans le composant (tableau `RELEASE_NOTES`). Fermable par clic sur × ou sur l'arrière-plan.
+
+---
+
 ## v1.3
 _Date: 2026-04-15_
 
