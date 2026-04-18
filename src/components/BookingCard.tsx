@@ -24,6 +24,7 @@ export type Booking = {
   routeType: string | null;
   allDay: boolean;
   status: string;
+  phone: string | null;
   notes: string | null;
   externalRef: string | null;
 };
@@ -113,6 +114,7 @@ export default function BookingCard({
       </p>
       <p className="text-slate-300 text-sm mt-1">
         {booking.guestName}{booking.nationality && <Flag code={booking.nationality} size="1.1rem" />} — <a href={`mailto:${booking.guestEmail}`} className="text-amber-400 hover:underline">{booking.guestEmail}</a>
+        {booking.phone && <span className="ml-2 text-slate-400">· <a href={`tel:${booking.phone}`} className="hover:text-amber-400">{booking.phone}</a></span>}
       </p>
       {booking.notes && <p className="text-slate-500 text-xs mt-1 italic">{booking.notes}</p>}
 

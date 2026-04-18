@@ -34,11 +34,15 @@ export default function Calendar({
   blocked = [],
   onBookingClick,
   onBlockedClick,
+  onDateClick,
+  onDateChange,
 }: {
   bookings: Booking[];
   blocked?: BlockedSlot[];
   onBookingClick: (booking: Booking) => void;
   onBlockedClick?: (slot: BlockedSlot) => void;
+  onDateClick?: (date: Date) => void;
+  onDateChange?: (date: Date) => void;
 }) {
   const [view, setView] = useState<View>("week");
   const [current, setCurrent] = useState(() => {
@@ -51,14 +55,14 @@ export default function Calendar({
   const fcRef = useRef<FullCalendarType>(null);
 
   function prevMonth() {
-    setCurrent((c) =>
-      c.month === 0 ? { year: c.year - 1, month: 11 } : { year: c.year, month: c.month - 1 }
-    );
+    const next = current.month === 0 ? { year: current.year - 1, month: 11 } : { year: current.year, month: current.month - 1 };
+    setCurrent(next);
+    onDateChange?.(new Date(next.year, next.month, 1));
   }
   function nextMonth() {
-    setCurrent((c) =>
-      c.month === 11 ? { year: c.year + 1, month: 0 } : { year: c.year, month: c.month + 1 }
-    );
+    const next = current.month === 11 ? { year: current.year + 1, month: 0 } : { year: current.year, month: current.month + 1 };
+    setCurrent(next);
+    onDateChange?.(new Date(next.year, next.month, 1));
   }
   function fcPrev() { fcRef.current?.getApi().prev(); }
   function fcNext() { fcRef.current?.getApi().next(); }
@@ -66,6 +70,7 @@ export default function Calendar({
     const d = new Date();
     setCurrent({ year: d.getFullYear(), month: d.getMonth() });
     setFcDate(d);
+    onDateChange?.(d);
     fcRef.current?.getApi().today();
   }
 
@@ -128,33 +133,52 @@ export default function Calendar({
   // --- Vue semaine / jour : FullCalendar ---
   if (view === "week" || view === "day") {
     const events = [
-      ...bookings.map((b) => ({
-        id: b.id,
-        title: `${b.tourName} — ${b.guestName} (${b.participants})`,
-        start: b.allDay ? b.date.slice(0, 10) : b.date,
-        end: b.allDay
-          ? undefined
-          : b.duration ? new Date(new Date(b.date).getTime() + b.duration * 60_000).toISOString() : undefined,
-        allDay: b.allDay,
-        backgroundColor: STATUS_COLOR[b.status] ?? "#64748b",
-        borderColor:     STATUS_COLOR[b.status] ?? "#64748b",
-        textColor: b.status === "pending" ? "#000" : "#fff",
-        extendedProps: { nationality: b.nationality, code: bookingCode(b), isBlocked: false },
-      })),
-      ...blocked.map((bl) => ({
-        id: "blocked-" + bl.id,
-        title: bl.reason ? `🔒 ${bl.reason}` : "🔒 Bloqueado",
-        start: bl.allDay ? bl.date.slice(0, 10) : bl.date,
-        end: bl.allDay
-          ? undefined
-          : bl.duration ? new Date(new Date(bl.date).getTime() + bl.duration * 60_000).toISOString() : undefined,
-        allDay: bl.allDay,
-        backgroundColor: bl.allDay ? "rgba(51,65,85,0.6)" : "#1e293b",
-        borderColor:     "#475569",
-        textColor: "#94a3b8",
-        display: bl.allDay ? "background" : "block",
-        extendedProps: { isBlocked: true, nationality: null, code: null },
-      })),
+      ...bookings.flatMap((b) => {
+        const color = STATUS_COLOR[b.status] ?? "#64748b";
+        if (b.allDay) {
+          const dateStr = b.date.slice(0, 10);
+          return [{
+            id: b.id,
+            title: `☀ ${b.tourName} — ${b.guestName} (${b.participants})`,
+            start: `${dateStr}T06:00:00`,
+            end:   `${dateStr}T22:00:00`,
+            allDay: false,
+            backgroundColor: color,
+            borderColor: color,
+            textColor: b.status === "pending" ? "#000" : "#fff",
+            extendedProps: { nationality: b.nationality, code: bookingCode(b), isBlocked: false },
+          }];
+        }
+        return [{
+          id: b.id,
+          title: `${b.tourName} — ${b.guestName} (${b.participants})`,
+          start: b.date,
+          end: b.duration ? new Date(new Date(b.date).getTime() + b.duration * 60_000).toISOString() : undefined,
+          allDay: false,
+          backgroundColor: color,
+          borderColor: color,
+          textColor: b.status === "pending" ? "#000" : "#fff",
+          extendedProps: { nationality: b.nationality, code: bookingCode(b), isBlocked: false },
+        }];
+      }),
+      ...blocked.map((bl) => {
+        const dateStr = bl.date.slice(0, 10);
+        const start = bl.allDay ? `${dateStr}T06:00:00` : bl.date;
+        const end   = bl.allDay
+          ? `${dateStr}T22:00:00`
+          : bl.duration ? new Date(new Date(bl.date).getTime() + bl.duration * 60_000).toISOString() : undefined;
+        return {
+          id: "blocked-" + bl.id,
+          title: bl.reason ? `🔒 ${bl.reason}` : "🔒 Bloqueado",
+          start,
+          end,
+          allDay: false,
+          backgroundColor: "#334155",
+          borderColor: "#64748b",
+          textColor: "#cbd5e1",
+          extendedProps: { isBlocked: true, nationality: null, code: null },
+        };
+      }),
     ];
 
     return (
@@ -179,35 +203,40 @@ export default function Calendar({
             }
           }}
           height="auto"
+          allDaySlot={false}
           slotMinTime="06:00:00"
           slotMaxTime="22:00:00"
           slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
           eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
           headerToolbar={false}
+          dateClick={(info) => { if (!info.allDay) onDateClick?.(info.date); }}
           datesSet={(info) => {
             setFcTitle(info.view.title);
             setFcDate(info.view.currentStart);
             // B5.2: keep Gantt month in sync so switching back to "Mes" shows the right month
             setCurrent({ year: info.view.currentStart.getFullYear(), month: info.view.currentStart.getMonth() });
+            onDateChange?.(info.view.currentStart);
           }}
           eventContent={(arg) => {
             if (arg.event.extendedProps.isBlocked) {
               return (
-                <div className="px-1 py-0.5 text-xs leading-tight flex items-center gap-1 opacity-70"
-                  style={{ borderLeft: "3px solid #475569" }}>
+                <div className="px-1 py-0.5 text-xs leading-tight flex items-center gap-1"
+                  style={{ borderLeft: "3px solid #64748b" }}>
                   <span>🔒</span>
-                  <span className="truncate text-slate-400">{arg.event.title.replace("🔒 ", "")}</span>
+                  <span className="truncate" style={{ color: "#cbd5e1" }}>{arg.event.title.replace("🔒 ", "")}</span>
                 </div>
               );
             }
             return (
-              <div className="px-1 py-0.5 text-xs leading-tight cursor-pointer flex items-center gap-1">
-                <span className="font-semibold shrink-0">{arg.timeText}</span>
-                <span className="opacity-90 truncate">{arg.event.title}</span>
-                <span className="shrink-0 font-mono font-bold opacity-80">{arg.event.extendedProps.code}</span>
-                {arg.event.extendedProps.nationality && (
-                  <Flag code={arg.event.extendedProps.nationality} size="0.9rem" />
-                )}
+              <div className="px-1 py-0.5 text-xs leading-tight cursor-pointer overflow-hidden">
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold shrink-0">{arg.timeText}</span>
+                  <span className="font-mono font-bold opacity-80 shrink-0">{arg.event.extendedProps.code}</span>
+                  {arg.event.extendedProps.nationality && (
+                    <Flag code={arg.event.extendedProps.nationality} size="0.9rem" />
+                  )}
+                </div>
+                <div className="opacity-90 break-words">{arg.event.title}</div>
               </div>
             );
           }}

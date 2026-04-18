@@ -25,6 +25,7 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [allDayOnly, setAllDayOnly] = useState(false);
 
   // Tri
   const [sortField, setSortField] = useState<SortField>("date");
@@ -80,6 +81,7 @@ export default function Dashboard() {
     setSearch("");
     setDateFrom("");
     setDateTo("");
+    setAllDayOnly(false);
     setSortField("date");
     setSortDir("asc");
     setPage(1);
@@ -101,6 +103,7 @@ export default function Dashboard() {
     }
     if (dateFrom) list = list.filter((b) => new Date(b.date) >= new Date(dateFrom));
     if (dateTo)   list = list.filter((b) => new Date(b.date) <= new Date(dateTo + "T23:59:59"));
+    if (allDayOnly) list = list.filter((b) => b.allDay);
 
     list.sort((a, b) => {
       let va: string | number, vb: string | number;
@@ -121,7 +124,7 @@ export default function Dashboard() {
   const refused   = bookings.filter((b) => b.status === "refused").length;
   const activeFiltersCount = [
     statusFilter !== "all", sourceFilter !== "all",
-    search, dateFrom, dateTo,
+    search, dateFrom, dateTo, allDayOnly,
     sortField !== "date" || sortDir !== "asc",
   ].filter(Boolean).length;
 
@@ -238,11 +241,18 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-1">
-            <span className="text-xs text-slate-500">{statusFilter === "blocked" ? `${blocked.length} bloqueado(s)` : `${displayed.length} reserva(s) mostrada(s)`}</span>
-            <button onClick={resetFilters} className="text-xs text-slate-400 hover:text-amber-400">
-              Restablecer filtros
-            </button>
+          <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" checked={allDayOnly} onChange={(e) => setAllDayOnly(e.target.checked)}
+                className="w-4 h-4 accent-amber-500" />
+              <span className="text-sm text-slate-300">☀ Solo jornada completa</span>
+            </label>
+            <div className="flex items-center gap-4">
+              <span className="text-xs text-slate-500">{statusFilter === "blocked" ? `${blocked.length} bloqueado(s)` : `${displayed.length} reserva(s) mostrada(s)`}</span>
+              <button onClick={resetFilters} className="text-xs text-slate-400 hover:text-amber-400">
+                Restablecer filtros
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -416,8 +426,9 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
     source: "viator",
     guestName: "Juan García",
     guestEmail: "juan@example.com",
+    phone: "",
     tourName: "Bardenas Reales",
-    date: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16),
+    date: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10) + "T09:00",
     participants: "2",
     duration: "",
     allDay: false,
@@ -486,6 +497,12 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
             <div>
               <label className="text-xs text-slate-400 block mb-1">Email</label>
               <input type="email" value={form.guestEmail} onChange={(e) => setForm({ ...form, guestEmail: e.target.value })}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Teléfono (opcional)</label>
+              <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                placeholder="+34 600 000 000"
                 className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
             </div>
             <div>

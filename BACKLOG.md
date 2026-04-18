@@ -1,5 +1,5 @@
 # Horus — Backlog
-_Dernière mise à jour : 2026-04-13_
+_Dernière mise à jour : 2026-04-15_
 
 ---
 
@@ -48,15 +48,15 @@ _Dernière mise à jour : 2026-04-13_
 
 ---
 
-## 💡 Idées (non planifiées)
+## 💡 Idées livrées
 
-| # | Réf. test | Écran | Idée | Complexité |
-|---|-----------|-------|------|------------|
-| I1 | 4.13 | Calendrier | Barre de recherche rapide sur toutes les vues | Moyenne |
-| I2 | 4.21 | Planning / Calendrier | Bloqueados multi-jours affichés comme une plage unique ("3–14 ago") | Haute |
-| I3 | 4.13 | Calendrier | Filtre rapide par statut dans la vue calendrier | Moyenne |
-| I4 | 7.4 | Dashboard | Toggle "Toda la jornada" dans les filtres | Basse |
-| I5 | R5 | Calendrier — formulaire blocage | Pré-remplir la date du formulaire "Bloquear horario" avec la date visible dans la vue courante | Basse |
+| # | Réf. test | Écran | Idée | Complexité | Statut |
+|---|-----------|-------|------|------------|--------|
+| I1 | 4.13 | Calendrier | Barre de recherche rapide sur toutes les vues | Moyenne | ✅ Livré v1.3 |
+| I2 | 4.21 | Planning | Bloqueados multi-jours affichés comme une plage unique ("3–14 ago") | Haute | ✅ Livré v1.3 |
+| I3 | 4.13 | Calendrier | Filtre rapide par statut dans la vue calendrier | Moyenne | ✅ Livré v1.3 |
+| I4 | 7.4 | Dashboard | Toggle "Toda la jornada" dans les filtres | Basse | ✅ Livré v1.3 |
+| I5 | R5 | Calendrier — formulaire blocage | Pré-remplir la date du formulaire "Bloquear horario" avec la date visible dans la vue courante | Basse | ✅ Livré v1.3 |
 
 ---
 
@@ -67,4 +67,6 @@ _Dernière mise à jour : 2026-04-13_
 | v1.1 (2026-04-12) | 4 critiques + 2 mineurs | A1 | T1, T2, T3 |
 | v1.2 (2026-04-13) | B2.1, B4.2, B5.2, N1 | — | N2 |
 | v1.3 → **v1.1 stable** (2026-04-13) | B2.2, B4.3 | — | — |
-| **Total** | **12** | **1** | **4** |
+| **v1.2 stable** (2026-04-14) | form time init | allDay conflict + blocs 06–22 + couleur | — |
+| **v1.3 stable** (2026-04-15) | — | I1 I2 I3 I4 I5 + champ tél | — |
+| **Total** | **13** | **8** | **4** |

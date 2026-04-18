@@ -31,6 +31,41 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString("es-ES", { weekday: "short", day: "2-digit", month: "2-digit" });
 }
 
+function formatShortDate(d: Date): string {
+  return d.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+}
+
+type BlockedGroup = {
+  id: string;
+  reason: string | null;
+  allDay: boolean;
+  startDate: Date;
+  endDate: Date;
+  duration: number | null;
+};
+
+function groupBlockedSlots(slots: BlockedSlot[]): BlockedGroup[] {
+  const allDay = [...slots.filter((s) => s.allDay)].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const partial = slots.filter((s) => !s.allDay);
+  const groups: BlockedGroup[] = [];
+
+  for (const slot of allDay) {
+    const d = new Date(slot.date);
+    const last = groups[groups.length - 1];
+    if (last && last.allDay && last.reason === slot.reason) {
+      const dayDiff = Math.round((d.getTime() - last.endDate.getTime()) / 86_400_000);
+      if (dayDiff === 1) { last.endDate = d; continue; }
+    }
+    groups.push({ id: slot.id, reason: slot.reason, allDay: true, startDate: d, endDate: d, duration: null });
+  }
+
+  for (const slot of partial) {
+    groups.push({ id: slot.id, reason: slot.reason, allDay: false, startDate: new Date(slot.date), endDate: new Date(slot.date), duration: slot.duration });
+  }
+
+  return groups.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+}
+
 export default function PlanningPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [blocked, setBlocked] = useState<BlockedSlot[]>([]);
@@ -140,24 +175,31 @@ export default function PlanningPage() {
             </thead>
             <tbody>
               {(() => {
-                // Fusionner réservations et bloquages triés par date
-                type Row = { type: "booking"; data: Booking } | { type: "blocked"; data: BlockedSlot };
+                // Fusionner réservations et bloquages groupés triés par date
+                type Row = { type: "booking"; data: Booking } | { type: "blocked"; data: BlockedGroup };
                 const rows: Row[] = [
                   ...filtered.map((b): Row => ({ type: "booking", data: b })),
-                  ...filteredBlocked.map((bl): Row => ({ type: "blocked", data: bl })),
-                ].sort((a, b) => new Date(a.data.date).getTime() - new Date(b.data.date).getTime());
+                  ...groupBlockedSlots(filteredBlocked).map((g): Row => ({ type: "blocked", data: g })),
+                ].sort((a, b) => {
+                  const dateA = a.type === "booking" ? new Date(a.data.date) : a.data.startDate;
+                  const dateB = b.type === "booking" ? new Date(b.data.date) : b.data.startDate;
+                  return dateA.getTime() - dateB.getTime();
+                });
 
                 return rows.map((row, i) => {
                   if (row.type === "blocked") {
-                    const bl = row.data;
-                    const d = new Date(bl.date);
-                    const timeStr = bl.allDay ? "Jornada completa" : d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", hour12: false });
-                    const endStr = bl.allDay || !bl.duration ? "—" : new Date(d.getTime() + bl.duration * 60_000).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", hour12: false });
+                    const g = row.data;
+                    const sameDay = g.startDate.toDateString() === g.endDate.toDateString();
+                    const dateLabel = sameDay
+                      ? formatDate(g.startDate.toISOString())
+                      : `${formatShortDate(g.startDate)} – ${formatShortDate(g.endDate)}`;
+                    const timeStr = g.allDay ? "Jornada completa" : g.startDate.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", hour12: false });
+                    const endStr = g.allDay || !g.duration ? "—" : new Date(g.startDate.getTime() + g.duration * 60_000).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", hour12: false });
                     return (
-                      <tr key={"bl-" + bl.id} className="border-b border-slate-700/50 bg-slate-900/40">
-                        <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{formatDate(bl.date)}</td>
+                      <tr key={"bl-" + g.id} className="border-b border-slate-700/50 bg-slate-900/40">
+                        <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{dateLabel}</td>
                         <td className="px-3 py-2"><span className="text-slate-600 text-xs">🔒</span></td>
-                        <td className="px-3 py-2 text-slate-500 italic max-w-40 truncate">{bl.reason ?? "Bloqueado"}</td>
+                        <td className="px-3 py-2 text-slate-500 italic max-w-40 truncate">{g.reason ?? "Bloqueado"}</td>
                         <td className="px-3 py-2 text-slate-600">—</td>
                         <td className="px-3 py-2 text-slate-600 whitespace-nowrap font-mono text-xs">{timeStr}</td>
                         <td className="px-3 py-2 text-slate-600 whitespace-nowrap font-mono text-xs">{endStr}</td>

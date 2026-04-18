@@ -35,6 +35,7 @@ export async function PATCH(
     const thisEnd = thisStart + (existing.duration ?? 0) * 60_000;
 
     const conflict = confirmedThatDay.find((b) => {
+      if (existing.allDay || b.allDay) return true;
       const bStart = b.date.getTime();
       const bEnd = bStart + (b.duration ?? 0) * 60_000;
 

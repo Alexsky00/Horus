@@ -2,6 +2,59 @@
 
 ---
 
+## v1.3
+_Date: 2026-04-15_
+
+### Changes from v1.2
+
+**Champ téléphone (`phone`)**
+Ajouté en `String?` au modèle `Booking`. Affiché sur BookingCard, panneau latéral du calendrier (lien `tel:`), formulaire de création. Présent dans les données de démo (seed).
+
+**Recherche rapide calendrier (I1)**
+Barre de recherche au-dessus du calendrier filtre les réservations par nom client, nom de tour ou code avant envoi au composant FullCalendar.
+
+**Planning — bloquages multi-jours (I2)**
+Fonction `groupBlockedSlots()` dans `planning/page.tsx` : regroupe les créneaux allDay consécutifs (même raison, jours adjacents) en une seule ligne avec affichage de la plage ("3 may – 14 may"). Les créneaux partiels restent individuels.
+
+**Filtre statut calendrier (I3)**
+Boutons Todos / Pendiente / Confirmada / Rechazada au-dessus du calendrier. Filtre les réservations passées au composant FullCalendar.
+
+**Toggle jornada completa dashboard (I4)**
+Case à cocher "☀ Solo jornada completa" dans le panneau de filtres du dashboard. Filtre la liste sur `b.allDay === true`.
+
+**Pré-remplissage date formulaire blocage (I5)**
+Le formulaire "Bloquear horario" se pré-remplit avec la date du mois/semaine visible dans la vue courante du calendrier, via le callback `onDateChange` propagé depuis `Calendar.tsx`.
+
+**Création de réservation depuis le calendrier**
+Clic sur un créneau horaire (vues semaine/jour) ouvre un formulaire de création de réservation pré-rempli avec la date et l'heure cliquées (arrondi à 30 min).
+
+**`allDaySlot={false}`**
+Supprime la ligne d'en-tête "all day" inutile dans les vues semaine/jour de FullCalendar.
+
+**Labels événements sur deux lignes (vue semaine)**
+`eventContent` personnalisé : ligne 1 = heure + code + drapeau, ligne 2 = titre avec `break-words`. Empêche le débordement sur la colonne suivante.
+
+---
+
+## v1.2
+_Date: 2026-04-14_
+
+### Changes from v1.1
+
+**allDay conflict check**
+`POST /api/bookings` and `PATCH /api/bookings/[id]`: if the new/confirmed booking is `allDay`, it conflicts with any confirmed booking that day. Conversely, if any confirmed booking is `allDay`, it blocks all other bookings on that day.
+
+**allDay rendering in FullCalendar (week/day)**
+allDay bookings are no longer mapped as `allDay: true` events. They are rendered as timed events from `${dateStr}T06:00:00` to `${dateStr}T22:00:00` with the status color. allDay blocked slots use the same approach with `#334155` background.
+
+**Blocked slot color**
+Unified to `backgroundColor: "#334155"` / `borderColor: "#64748b"` in FullCalendar week/day view. Previous `#1e293b` was indistinguishable from the dark theme background.
+
+**Booking form time initialization**
+`date` state initialized as `...slice(0, 10) + "T09:00"` instead of `toISOString().slice(0, 16)` — prevents current clock time from being silently used when user doesn't touch the time selector.
+
+---
+
 ## v1.1
 _Date: 2026-04-13_
 
@@ -113,10 +166,12 @@ Uses `flag-icons` CSS library (SVG backgrounds) instead of Unicode emoji — req
 
 **Option 1 — Vercel (recommended, permanent)**
 1. Go to vercel.com → sign in with GitHub
-2. `Add New Project` → import `arrondiko/Horus`
+2. `Add New Project` → import `Alexsky00/Horus`
 3. Next.js detected automatically
 4. Add environment variables (same as `.env.local`)
-5. Click `Deploy` → generates a public URL (e.g. `horus-xxx.vercel.app`)
+5. Click `Deploy` → generates a public URL
+
+**Live URL:** https://horus-kvvgf4ubm-horus-6a1fbd1d.vercel.app/
 
 Every `git push` triggers an automatic redeploy.
 

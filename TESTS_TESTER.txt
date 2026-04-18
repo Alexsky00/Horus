@@ -1,7 +1,7 @@
 ================================================================
 HORUS — MANUAL TEST SHEET
-App version  : 1.1
-Test suite   : v1.1 (updated)
+App version  : 1.2
+Test suite   : v1.2 (updated)
 Tester       : ___________________________
 Date         : ___________________________
 URL          : http://[URL provided by Alexis]

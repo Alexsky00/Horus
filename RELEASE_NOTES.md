@@ -2,6 +2,23 @@
 
 ---
 
+## v1.2
+_Release date: 2026-04-14_
+_Status: Stable_
+
+### Bug fixes
+- **Booking form time** — form now initializes at 09:00 instead of current clock time; selected time is always used
+- **Block form time selector** — `<select>` 06:00–21:30 replacing `<input type="time" step=1800>` (cross-browser)
+- **ExternalRef** — OTA reference (VIA-001…) removed from calendar side panel
+
+### Improvements
+- **allDay conflict** — a confirmed allDay booking blocks the entire day; confirming any booking on an allDay day is refused
+- **allDay in calendar (week/day)** — allDay bookings display as a solid 06:00–22:00 block with status color (amber/green/red)
+- **Blocked slot in calendar (week/day)** — allDay blocked slots display as a solid 06:00–22:00 block (slate-700) instead of a background overlay
+- **Blocked slot color** — unified to `#334155` (slate-700) for visibility against the dark theme
+
+---
+
 ## v1.1
 _Release date: 2026-04-13_
 _Status: Stable_

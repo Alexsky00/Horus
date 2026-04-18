@@ -20,6 +20,7 @@ model Booking {
   routeType    String?  // "corta" | "media" | "larga"
   allDay       Boolean  @default(false)
   status       String   @default("pending") // "pending" | "confirmed" | "refused"
+  phone        String?  // téléphone du client
   notes        String?
   externalRef  String?  // référence OTA
   createdAt    DateTime @default(now())

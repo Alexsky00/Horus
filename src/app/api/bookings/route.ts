@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
 // POST /api/bookings — crée une nouvelle réservation (depuis simulation OTA ou formulaire)
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { source, guestName, guestEmail, tourName, date, participants, duration, nationality, routeType, allDay, notes, externalRef } = body;
+  const { source, guestName, guestEmail, phone, tourName, date, participants, duration, nationality, routeType, allDay, notes, externalRef } = body;
 
   if (!source || !guestName || !guestEmail || !tourName || !date || !participants) {
     return NextResponse.json({ error: "Faltan campos obligatorios (source, guestName, guestEmail, tourName, date, participants)" }, { status: 400 });
@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
   const newEnd = newStart + newDuration * 60_000;
 
   const conflict = confirmedThatDay.find((b) => {
+    if (allDay === true || b.allDay) return true;
     const bStart = b.date.getTime();
     const bEnd = bStart + (b.duration ?? 0) * 60_000;
     if (newDuration === 0 && (b.duration ?? 0) === 0) return bStart === newStart;
@@ -92,6 +93,7 @@ export async function POST(req: NextRequest) {
       nationality: nationality ?? null,
       routeType: routeType ?? null,
       allDay: allDay === true,
+      phone: phone ?? null,
       notes: notes ?? null,
       externalRef: externalRef ?? null,
       status: conflict ? "refused" : "pending",

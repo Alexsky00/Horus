@@ -47,6 +47,72 @@ export default function CalendarPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
+  // I5 — date courante du calendrier (pour pré-remplir le formulaire blocage)
+  const [calendarDate, setCalendarDate] = useState(new Date());
+
+  // I1 — recherche rapide
+  const [calendarSearch, setCalendarSearch] = useState("");
+
+  // I3 — filtre statut
+  const [calendarStatusFilter, setCalendarStatusFilter] = useState("");
+
+  // Formulaire nouvelle réservation
+  const [showBooking, setShowBooking] = useState(false);
+  const [bookingForm, setBookingForm] = useState({
+    source: "manual", guestName: "", guestEmail: "", phone: "",
+    tourName: "Bardenas Reales", date: "", time: "09:00",
+    participants: "2", duration: "120", allDay: false,
+    nationality: "", routeType: "", notes: "",
+  });
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingError, setBookingError] = useState<string | null>(null);
+
+  function handleDateClick(date: Date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    const h = String(date.getHours()).padStart(2, "0");
+    const min = date.getMinutes() < 30 ? "00" : "30";
+    setBookingForm((prev) => ({ ...prev, date: `${y}-${m}-${d}`, time: `${h}:${min}`, allDay: false }));
+    setShowBooking(true);
+    setSelected(null);
+    setSelectedBlocked(null);
+    setBookingError(null);
+  }
+
+  async function submitBooking(e: React.FormEvent) {
+    e.preventDefault();
+    setBookingLoading(true);
+    setBookingError(null);
+    const dateStr = bookingForm.allDay ? `${bookingForm.date}T12:00` : `${bookingForm.date}T${bookingForm.time}`;
+    const res = await fetch("/api/bookings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        source: bookingForm.source,
+        guestName: bookingForm.guestName,
+        guestEmail: bookingForm.guestEmail,
+        phone: bookingForm.phone || null,
+        tourName: bookingForm.tourName,
+        date: dateStr,
+        participants: Number(bookingForm.participants),
+        duration: bookingForm.allDay ? null : Number(bookingForm.duration),
+        allDay: bookingForm.allDay,
+        nationality: bookingForm.nationality || null,
+        routeType: bookingForm.routeType || null,
+        notes: bookingForm.notes || null,
+      }),
+    });
+    setBookingLoading(false);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      setBookingError(err.error ?? "Error al crear la reserva");
+      return;
+    }
+    setShowBooking(false);
+    fetchBookings();
+  }
+
   // Formulaire blocage
   const [showBlock, setShowBlock] = useState(false);
   const [blockForm, setBlockForm] = useState({
@@ -133,13 +199,119 @@ export default function CalendarPage() {
     <div className="space-y-4">
       <h1 className="text-lg font-semibold text-white">Calendario</h1>
 
-      {/* Bouton + formulaire blocage */}
+      {/* Boutons */}
       <div className="flex items-center gap-3 flex-wrap">
-        <button onClick={() => setShowBlock(!showBlock)}
+        <button onClick={() => { setShowBooking(!showBooking); setShowBlock(false); }}
+          className="flex items-center gap-2 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black font-semibold text-sm rounded-lg transition-colors">
+          + {showBooking ? "Cancelar" : "Nueva reserva"}
+        </button>
+        <button onClick={() => {
+          const d = calendarDate;
+          const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+          setBlockForm((prev) => ({ ...prev, date: dateStr }));
+          setShowBlock(!showBlock); setShowBooking(false);
+        }}
           className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-200 text-sm rounded-lg transition-colors">
           🔒 {showBlock ? "Cancelar" : "Bloquear horario"}
         </button>
       </div>
+
+      {showBooking && (
+        <form onSubmit={submitBooking} className="bg-slate-800 border border-slate-600 rounded-lg p-4 space-y-3">
+          <p className="text-sm font-semibold text-slate-200">+ Nueva reserva</p>
+          {bookingError && <div className="bg-red-900/40 border border-red-700 text-red-300 rounded px-3 py-2 text-xs">⚠ {bookingError}</div>}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Plataforma</label>
+              <select value={bookingForm.source} onChange={(e) => setBookingForm({ ...bookingForm, source: e.target.value })}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
+                {["viator","getyourguide","civitatis","wordpress","manual"].map((s) => (
+                  <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Tour</label>
+              <input value={bookingForm.tourName} onChange={(e) => setBookingForm({ ...bookingForm, tourName: e.target.value })}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" required />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Nombre</label>
+              <input value={bookingForm.guestName} onChange={(e) => setBookingForm({ ...bookingForm, guestName: e.target.value })}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" required />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Email</label>
+              <input type="email" value={bookingForm.guestEmail} onChange={(e) => setBookingForm({ ...bookingForm, guestEmail: e.target.value })}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" required />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Teléfono (opcional)</label>
+              <input type="tel" value={bookingForm.phone} onChange={(e) => setBookingForm({ ...bookingForm, phone: e.target.value })}
+                placeholder="+34 600 000 000"
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Participantes</label>
+              <input type="number" min="1" value={bookingForm.participants} onChange={(e) => setBookingForm({ ...bookingForm, participants: e.target.value })}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" required />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Fecha</label>
+              <input type="date" value={bookingForm.date} onChange={(e) => setBookingForm({ ...bookingForm, date: e.target.value })}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" required />
+            </div>
+            <div className="flex flex-col justify-end">
+              <label className="flex items-center gap-2 cursor-pointer mb-1">
+                <input type="checkbox" checked={bookingForm.allDay}
+                  onChange={(e) => setBookingForm({ ...bookingForm, allDay: e.target.checked })}
+                  className="w-4 h-4 accent-amber-500" />
+                <span className="text-sm text-white">Toda la jornada</span>
+              </label>
+            </div>
+            {!bookingForm.allDay && <>
+              <div>
+                <label className="text-xs text-slate-400 block mb-1">Hora</label>
+                <select value={bookingForm.time} onChange={(e) => setBookingForm({ ...bookingForm, time: e.target.value })}
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
+                  {Array.from({ length: 32 }, (_, i) => {
+                    const h = Math.floor(i / 2) + 6;
+                    const min = i % 2 === 0 ? "00" : "30";
+                    const val = `${String(h).padStart(2, "0")}:${min}`;
+                    return <option key={val} value={val}>{val}</option>;
+                  })}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 block mb-1">Duración</label>
+                <select value={bookingForm.duration} onChange={(e) => setBookingForm({ ...bookingForm, duration: e.target.value })}
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
+                  {DURATIONS.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </div>
+            </>}
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Tipo ruta</label>
+              <select value={bookingForm.routeType} onChange={(e) => setBookingForm({ ...bookingForm, routeType: e.target.value })}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
+                <option value="">— Sin tipo —</option>
+                <option value="corta">🟢 Corta</option>
+                <option value="media">🟡 Media</option>
+                <option value="larga">🔴 Larga</option>
+              </select>
+            </div>
+            <div className="col-span-2">
+              <label className="text-xs text-slate-400 block mb-1">Notas (opcional)</label>
+              <input value={bookingForm.notes} onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
+            </div>
+          </div>
+          <button type="submit" disabled={bookingLoading}
+            className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-sm font-semibold rounded disabled:opacity-50">
+            {bookingLoading ? "Guardando..." : "Crear reserva"}
+          </button>
+        </form>
+      )}
 
       {showBlock && (
         <form onSubmit={submitBlock} className="bg-slate-800 border border-slate-600 rounded-lg p-4 space-y-3">
@@ -198,14 +370,39 @@ export default function CalendarPage() {
       )}
 
 
-<div className="flex gap-4 flex-col lg:flex-row">
+      {/* I1 + I3 — Recherche et filtre statut */}
+      <div className="flex gap-2 items-center flex-wrap">
+        <input
+          value={calendarSearch}
+          onChange={(e) => setCalendarSearch(e.target.value)}
+          placeholder="Buscar cliente, tour..."
+          className="flex-1 min-w-36 bg-slate-800 border border-slate-600 rounded-full px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+        />
+        {(["", "pending", "confirmed", "refused"] as const).map((s) => (
+          <button key={s} onClick={() => setCalendarStatusFilter(s)}
+            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${calendarStatusFilter === s ? "bg-amber-500 border-amber-500 text-black font-medium" : "border-slate-600 text-slate-400 hover:border-slate-400"}`}>
+            {s === "" ? "Todos" : s === "pending" ? "Pendiente" : s === "confirmed" ? "Confirmada" : "Rechazada"}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex gap-4 flex-col lg:flex-row">
         {/* Calendrier */}
         <div className="bg-slate-800 rounded-lg p-4 border border-slate-700 flex-1 min-w-0">
           <FullCalendarComponent
-            bookings={bookings}
+            bookings={bookings.filter((b) => {
+              if (calendarStatusFilter && b.status !== calendarStatusFilter) return false;
+              if (calendarSearch.trim()) {
+                const q = calendarSearch.toLowerCase();
+                return b.guestName.toLowerCase().includes(q) || b.tourName.toLowerCase().includes(q);
+              }
+              return true;
+            })}
             blocked={blocked}
-            onBookingClick={(b) => { setSelectedBlocked(null); setSelected(b); }}
-            onBlockedClick={(bl) => { setSelected(null); setSelectedBlocked(bl); }}
+            onBookingClick={(b) => { setSelectedBlocked(null); setShowBooking(false); setSelected(b); }}
+            onBlockedClick={(bl) => { setSelected(null); setShowBooking(false); setSelectedBlocked(bl); }}
+            onDateClick={(date) => handleDateClick(date)}
+            onDateChange={setCalendarDate}
           />
         </div>
 
@@ -257,6 +454,12 @@ export default function CalendarPage() {
                   {selected.guestEmail}
                 </a>
               </div>
+              {selected.phone && (
+                <div className="flex gap-2">
+                  <span className="text-slate-500 w-24 flex-shrink-0">Teléfono</span>
+                  <a href={`tel:${selected.phone}`} className="text-amber-400 hover:underline">{selected.phone}</a>
+                </div>
+              )}
               <div className="flex gap-2">
                 <span className="text-slate-500 w-24 flex-shrink-0">Participantes</span>
                 <span className="text-slate-200">{selected.participants} pers.</span>
