@@ -41,6 +41,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <a href="/logs" className="text-slate-300 hover:text-amber-400 text-sm font-medium">
               Logs
             </a>
+            <a href="/admin" className="text-slate-500 hover:text-slate-300 text-sm font-medium" title="Administración">
+              ⚙
+            </a>
           </nav>
         </header>
         <main className="max-w-5xl mx-auto px-4 py-6">{children}</main>

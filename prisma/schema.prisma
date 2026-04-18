@@ -44,6 +44,12 @@ model Log {
   createdAt DateTime @default(now())
 }
 
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
 model PushSubscription {
   id        String   @id @default(cuid())
   endpoint  String   @unique
