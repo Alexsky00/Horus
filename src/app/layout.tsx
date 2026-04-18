@@ -22,6 +22,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es">
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        {/* Script synchrone : applique le thème AVANT le premier rendu, sans flash */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          try {
+            var t = localStorage.getItem('horus-theme');
+            if (t && t !== 'slate') document.documentElement.setAttribute('data-theme', t);
+          } catch(e) {}
+        ` }} />
       </head>
       <body className="min-h-screen">
         <ThemeLoader />

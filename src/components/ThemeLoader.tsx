@@ -3,13 +3,7 @@ import { useEffect } from "react";
 
 export default function ThemeLoader() {
   useEffect(() => {
-    // Application rapide depuis localStorage pour éviter le flash
-    const cached = localStorage.getItem("horus-theme");
-    if (cached && cached !== "slate") {
-      document.documentElement.setAttribute("data-theme", cached);
-    }
-
-    // Confirmation depuis la base
+    // Synchro DB — applique si différent du localStorage (autre appareil, premier chargement)
     fetch("/api/settings")
       .then((r) => r.json())
       .then((settings: Record<string, string>) => {
