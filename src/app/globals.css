@@ -2,30 +2,107 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Thème sombre par défaut */
+/* ─── Thème par défaut : Noche (slate) ─────────────────────────── */
 :root {
-  --bg: #0f172a;
-  --surface: #1e293b;
-  --border: #334155;
-  --text: #f1f5f9;
-  --muted: #94a3b8;
-  --accent: #f59e0b;
+  --bg:       #0f172a;
+  --surface:  #1e293b;
+  --surface2: #0f172a;
+  --border:   #334155;
+  --border2:  #1e293b;
+  --btn:      #334155;
+  --accent:   #f59e0b;
+  --accent-fg:#000000;
 }
 
 body {
   background-color: var(--bg);
-  color: var(--text);
+  color: #f1f5f9;
   font-family: system-ui, -apple-system, sans-serif;
 }
 
-/* FullCalendar overrides */
+/* ─── Overrides Tailwind par thème ─────────────────────────────── */
+/* On cible les classes les plus fréquentes dans l'app              */
+
+[data-theme] .bg-slate-800          { background-color: var(--surface)  !important; }
+[data-theme] .bg-slate-800\/60      { background-color: color-mix(in srgb, var(--surface) 60%, transparent) !important; }
+[data-theme] .bg-slate-800\/20      { background-color: color-mix(in srgb, var(--surface) 20%, transparent) !important; }
+[data-theme] .bg-slate-900          { background-color: var(--surface2) !important; }
+[data-theme] .bg-slate-900\/40      { background-color: color-mix(in srgb, var(--surface2) 40%, transparent) !important; }
+[data-theme] .bg-slate-700          { background-color: var(--btn)      !important; }
+[data-theme] .bg-slate-700\/50      { background-color: color-mix(in srgb, var(--btn) 50%, transparent) !important; }
+[data-theme] .border-slate-700      { border-color: var(--border)  !important; }
+[data-theme] .border-slate-700\/50  { border-color: color-mix(in srgb, var(--border) 50%, transparent) !important; }
+[data-theme] .border-slate-800      { border-color: var(--border2) !important; }
+[data-theme] .border-slate-600      { border-color: var(--border)  !important; }
+
+/* ─── Thème : Océano (teal) ────────────────────────────────────── */
+[data-theme="ocean"] {
+  --bg:       #061c1e;
+  --surface:  #0d3033;
+  --surface2: #061c1e;
+  --border:   #155f64;
+  --border2:  #0d3033;
+  --btn:      #155f64;
+  --accent:   #2dd4bf;
+  --accent-fg:#000000;
+}
+
+/* ─── Thème : Bosque (green) ───────────────────────────────────── */
+[data-theme="forest"] {
+  --bg:       #031a0d;
+  --surface:  #082e17;
+  --surface2: #031a0d;
+  --border:   #145228;
+  --border2:  #082e17;
+  --btn:      #145228;
+  --accent:   #4ade80;
+  --accent-fg:#000000;
+}
+
+/* ─── Thème : Vino (purple) ─────────────────────────────────────── */
+[data-theme="wine"] {
+  --bg:       #110820;
+  --surface:  #1e1038;
+  --surface2: #110820;
+  --border:   #3b1f6e;
+  --border2:  #1e1038;
+  --btn:      #3b1f6e;
+  --accent:   #c084fc;
+  --accent-fg:#000000;
+}
+
+/* ─── Thème : Desierto (warm brown) ────────────────────────────── */
+[data-theme="desert"] {
+  --bg:       #160d04;
+  --surface:  #271808;
+  --surface2: #160d04;
+  --border:   #4d2f0e;
+  --border2:  #271808;
+  --btn:      #4d2f0e;
+  --accent:   #fb923c;
+  --accent-fg:#000000;
+}
+
+/* ─── Thème : Ártico (blue) ─────────────────────────────────────── */
+[data-theme="arctic"] {
+  --bg:       #060f1f;
+  --surface:  #0f1f3d;
+  --surface2: #060f1f;
+  --border:   #1e3a6e;
+  --border2:  #0f1f3d;
+  --btn:      #1e3a6e;
+  --accent:   #60a5fa;
+  --accent-fg:#000000;
+}
+
+/* ─── FullCalendar overrides ────────────────────────────────────── */
 .fc {
   --fc-border-color: var(--border);
-  --fc-today-bg-color: rgba(245, 158, 11, 0.1);
+  --fc-today-bg-color: color-mix(in srgb, var(--accent) 10%, transparent);
   --fc-page-bg-color: var(--surface);
   --fc-neutral-bg-color: var(--surface);
   --fc-list-event-hover-bg-color: var(--border);
-  color: var(--text);
+  color: #f1f5f9;
 }
 
 .fc .fc-toolbar-title {
@@ -36,18 +113,18 @@ body {
 .fc .fc-button-primary {
   background-color: var(--accent) !important;
   border-color: var(--accent) !important;
-  color: #000 !important;
+  color: var(--accent-fg) !important;
 }
 
 .fc .fc-timegrid-slot-label {
-  color: var(--muted);
+  color: #94a3b8;
   font-size: 0.75rem;
 }
 
 .fc .fc-timegrid-now-indicator-line {
-  border-color: #f59e0b;
+  border-color: var(--accent);
 }
 
 .fc .fc-timegrid-now-indicator-arrow {
-  border-top-color: #f59e0b;
+  border-top-color: var(--accent);
 }

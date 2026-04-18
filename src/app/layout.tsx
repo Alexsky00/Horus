@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "flag-icons/css/flag-icons.min.css";
 import VersionFooter from "@/components/VersionFooter";
+import ThemeLoader from "@/components/ThemeLoader";
 
 export const metadata: Metadata = {
   title: "Horus — Reservas",
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body className="min-h-screen">
+        <ThemeLoader />
         <header className="bg-slate-800 border-b border-slate-700 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-amber-400 font-bold text-xl">☀ HORUS</span>

@@ -3,6 +3,51 @@ import { useEffect, useState, useCallback } from "react";
 
 type Settings = Record<string, string>;
 
+const THEMES = [
+  {
+    id: "slate",
+    label: "Noche",
+    bg: "#0f172a",
+    surface: "#1e293b",
+    accent: "#f59e0b",
+  },
+  {
+    id: "ocean",
+    label: "Océano",
+    bg: "#061c1e",
+    surface: "#0d3033",
+    accent: "#2dd4bf",
+  },
+  {
+    id: "forest",
+    label: "Bosque",
+    bg: "#031a0d",
+    surface: "#082e17",
+    accent: "#4ade80",
+  },
+  {
+    id: "wine",
+    label: "Vino",
+    bg: "#110820",
+    surface: "#1e1038",
+    accent: "#c084fc",
+  },
+  {
+    id: "desert",
+    label: "Desierto",
+    bg: "#160d04",
+    surface: "#271808",
+    accent: "#fb923c",
+  },
+  {
+    id: "arctic",
+    label: "Ártico",
+    bg: "#060f1f",
+    surface: "#0f1f3d",
+    accent: "#60a5fa",
+  },
+];
+
 const SOURCES = [
   {
     id: "wordpress",
@@ -61,6 +106,8 @@ export default function AdminPage() {
   const [saved, setSaved] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [origin, setOrigin] = useState("");
+  const [themeSaving, setThemeSaving] = useState(false);
+  const [themeSaved, setThemeSaved] = useState(false);
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -88,6 +135,26 @@ export default function AdminPage() {
     setTimeout(() => setSaved(null), 2000);
   }
 
+  async function saveTheme(themeId: string) {
+    set("theme.id", themeId);
+    setThemeSaving(true);
+    await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ "theme.id": themeId }),
+    });
+    // Appliquer immédiatement
+    localStorage.setItem("horus-theme", themeId);
+    if (themeId === "slate") {
+      document.documentElement.removeAttribute("data-theme");
+    } else {
+      document.documentElement.setAttribute("data-theme", themeId);
+    }
+    setThemeSaving(false);
+    setThemeSaved(true);
+    setTimeout(() => setThemeSaved(false), 2000);
+  }
+
   const copyToClipboard = useCallback((text: string, id: string) => {
     navigator.clipboard.writeText(text).then(() => {
       setCopied(id);
@@ -104,6 +171,60 @@ export default function AdminPage() {
         </p>
       </div>
 
+      {/* ── Thème de couleurs ── */}
+      <div className="rounded-xl border border-slate-700 bg-slate-800/60 overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-700 bg-slate-800/40">
+          <h2 className="text-white font-semibold text-sm">Tema de colores</h2>
+          <p className="text-slate-400 text-xs mt-0.5">Choisir la palette de couleurs de l'interface</p>
+        </div>
+        <div className="px-5 py-4">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+            {THEMES.map((theme) => {
+              const active = (settings["theme.id"] ?? "slate") === theme.id;
+              return (
+                <button
+                  key={theme.id}
+                  onClick={() => saveTheme(theme.id)}
+                  className={`relative rounded-xl overflow-hidden border-2 transition-all ${
+                    active ? "border-white scale-105 shadow-lg shadow-black/40" : "border-transparent hover:border-slate-500"
+                  }`}
+                  title={theme.label}
+                >
+                  {/* Preview card */}
+                  <div style={{ backgroundColor: theme.bg }} className="h-16 w-full flex flex-col p-1.5 gap-1">
+                    {/* Header bar */}
+                    <div style={{ backgroundColor: theme.surface }} className="rounded h-3 w-full" />
+                    {/* Card rows */}
+                    <div style={{ backgroundColor: theme.surface }} className="rounded h-2 w-3/4 opacity-80" />
+                    <div style={{ backgroundColor: theme.surface }} className="rounded h-2 w-1/2 opacity-60" />
+                    {/* Accent dot */}
+                    <div className="flex justify-end mt-auto">
+                      <div style={{ backgroundColor: theme.accent }} className="rounded-full h-2.5 w-2.5" />
+                    </div>
+                  </div>
+                  {/* Label */}
+                  <div style={{ backgroundColor: theme.surface }} className="py-1 text-center">
+                    <span className="text-xs font-medium" style={{ color: theme.accent }}>{theme.label}</span>
+                  </div>
+                  {/* Active check */}
+                  {active && (
+                    <div className="absolute top-1 right-1 bg-white rounded-full w-4 h-4 flex items-center justify-center">
+                      <span className="text-black text-xs font-bold leading-none">✓</span>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          {(themeSaving || themeSaved) && (
+            <p className="text-xs mt-3 text-center text-slate-400">
+              {themeSaving ? "Aplicando…" : "✓ Tema aplicado"}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* ── Integraciones ── */}
       <div className="space-y-4">
         {SOURCES.map((src) => {
           const enabled = get(key(src.id, "enabled")) === "true";
