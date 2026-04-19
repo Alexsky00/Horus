@@ -1,0 +1,50 @@
+================================================================
+HORUS — PATCH TEST SHEET
+Fix          : Statut conflit dans le panneau calendrier
+Date         : ___________________________
+Tester       : ___________________________
+================================================================
+
+SETUP
+-----
+Load demo data if not already done (/logs → Demo).
+
+================================================================
+TESTS
+================================================================
+
+[ ] C1  In /calendar, navigate to the day of Thomas Petit (j+1)
+        Click his event → side panel opens
+        Status badge shows "⚡ Conflicto" in PURPLE
+        (NOT "Pendiente" in amber)
+
+[ ] C2  In the same panel for Thomas Petit (⚡ Conflicto):
+        Buttons "✓ Aceptar" and "✗ Rechazar" are visible
+        (same as a pending booking)
+
+[ ] C3  Click "✓ Aceptar" on Thomas Petit →
+        error: "Conflicto de horario con la reserva de Sophie Martin"
+        (anti-overlap check still active for conflicts)
+
+[ ] C4  Click "✗ Rechazar" on Wei Zhang (⚡ Conflicto) from the panel →
+        status changes to Rechazada (red border in calendar)
+        ⚡ Conflictos tile on dashboard decreases by 1
+
+[ ] C5  Click a Pendiente booking (e.g. Hans Müller) →
+        status badge still shows "Pendiente" in amber (no regression)
+
+[ ] C6  Click a Confirmada booking (e.g. Sophie Martin) →
+        status badge shows "Confirmada" in green
+        No Aceptar/Rechazar buttons shown (no regression)
+
+================================================================
+SUMMARY
+================================================================
+
+Tests:  OK [   ]   NOK [   ]   Not tested [   ]
+
+ISSUES FOUND:
+-------------
+1.
+2.
+================================================================

@@ -20,6 +20,7 @@ const STATUS_COLOR: Record<string, string> = {
   pending:   "#f59e0b",
   confirmed: "#16a34a",
   refused:   "#b91c1c",
+  conflict:  "#a855f7",
 };
 
 // Plage horaire affichée dans la grille mensuelle

@@ -56,7 +56,7 @@ const SOURCES = [
     bg: "bg-blue-400/10",
     border: "border-blue-400/30",
     icon: "🌐",
-    description: "Plugin de réservation WordPress (Amelia, WooCommerce Bookings…)",
+    description: "Plugin de reservas WordPress (Amelia, WooCommerce Bookings…)",
     hasApiKey: false,
   },
   {
@@ -66,7 +66,7 @@ const SOURCES = [
     bg: "bg-orange-400/10",
     border: "border-orange-400/30",
     icon: "🧭",
-    description: "Viator / TripAdvisor Experiences (accès partenaire requis)",
+    description: "Viator / TripAdvisor Experiences (acceso de socio requerido)",
     hasApiKey: true,
   },
   {
@@ -76,7 +76,7 @@ const SOURCES = [
     bg: "bg-red-400/10",
     border: "border-red-400/30",
     icon: "🗺",
-    description: "GetYourGuide Supplier API (accès partenaire requis)",
+    description: "GetYourGuide Supplier API (acceso de socio requerido)",
     hasApiKey: true,
   },
   {
@@ -86,7 +86,7 @@ const SOURCES = [
     bg: "bg-green-400/10",
     border: "border-green-400/30",
     icon: "🏛",
-    description: "Civitatis (via Zapier/Make sur emails de confirmation)",
+    description: "Civitatis (vía Zapier/Make en emails de confirmación)",
     hasApiKey: false,
   },
 ];
@@ -165,9 +165,9 @@ export default function AdminPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-white font-bold text-xl">Administración — Integraciones</h1>
+        <h1 className="text-white font-bold text-xl">Administración</h1>
         <p className="text-slate-400 text-sm mt-1">
-          Configure los flujos de entrada de reservas desde cada plataforma.
+          Configura los temas de la app y los flujos de entrada de reservas desde cada plataforma.
         </p>
       </div>
 
@@ -175,7 +175,7 @@ export default function AdminPage() {
       <div className="rounded-xl border border-slate-700 bg-slate-800/60 overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-700 bg-slate-800/40">
           <h2 className="text-white font-semibold text-sm">Tema de colores</h2>
-          <p className="text-slate-400 text-xs mt-0.5">Choisir la palette de couleurs de l'interface</p>
+          <p className="text-slate-400 text-xs mt-0.5">Elige la paleta de colores de la interfaz</p>
         </div>
         <div className="px-5 py-4">
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
@@ -277,7 +277,7 @@ export default function AdminPage() {
                       </button>
                     </div>
                     <p className="text-slate-600 text-xs mt-1">
-                      Coller cette URL dans les paramètres du plugin / de la plateforme source.
+                      Pega esta URL en los ajustes del plugin / de la plataforma origen.
                     </p>
                   </div>
 
@@ -308,19 +308,19 @@ export default function AdminPage() {
                       )}
                     </div>
                     <p className="text-slate-600 text-xs mt-1">
-                      À renseigner également dans la plateforme source pour valider les requêtes entrantes.
+                      Configúrala también en la plataforma origen para validar las solicitudes entrantes.
                     </p>
                   </div>
 
                   {/* API Key (Viator / GYG) */}
                   {src.hasApiKey && (
                     <div>
-                      <label className="block text-slate-400 text-xs font-medium mb-1.5">Clé API partenaire</label>
+                      <label className="block text-slate-400 text-xs font-medium mb-1.5">Clave API de socio</label>
                       <input
                         type="text"
                         value={apiKey}
                         onChange={(e) => set(key(src.id, "apiKey"), e.target.value)}
-                        placeholder="Clé fournie par la plateforme"
+                        placeholder="Clave proporcionada por la plataforma"
                         className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-xs font-mono text-slate-300 placeholder-slate-600"
                       />
                     </div>
@@ -329,7 +329,7 @@ export default function AdminPage() {
                   {/* Tour par défaut */}
                   <div>
                     <label className="block text-slate-400 text-xs font-medium mb-1.5">
-                      Tour por defecto <span className="text-slate-600 font-normal">(si la plateforme n'envoie pas le nom)</span>
+                      Tour por defecto <span className="text-slate-600 font-normal">(si la plataforma no envía el nombre)</span>
                     </label>
                     <input
                       type="text"
@@ -344,7 +344,7 @@ export default function AdminPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-slate-300 text-sm">Confirmación automática</p>
-                      <p className="text-slate-500 text-xs">Les réservations entrantes sont directement confirmées (sans passer par Pendiente)</p>
+                      <p className="text-slate-500 text-xs">Las reservas entrantes se confirman directamente (sin pasar por Pendiente)</p>
                     </div>
                     <button
                       onClick={() => set(key(src.id, "autoConfirm"), autoConfirm ? "false" : "true")}
@@ -378,9 +378,9 @@ export default function AdminPage() {
       {/* Note */}
       <div className="rounded-lg border border-slate-700 bg-slate-800/40 px-4 py-3">
         <p className="text-slate-400 text-xs leading-relaxed">
-          <span className="text-amber-400 font-semibold">Note :</span> Les endpoints webhook (
-          <span className="font-mono">/api/webhooks/…</span>) sont en cours de développement (cf. Backlog INT1–INT4).
-          La configuration ci-dessus sera active une fois ces intégrations déployées.
+          <span className="text-amber-400 font-semibold">Nota:</span> Los endpoints webhook (
+          <span className="font-mono">/api/webhooks/…</span>) están en desarrollo (cf. Backlog INT1–INT4).
+          La configuración anterior estará activa una vez desplegadas estas integraciones.
         </p>
       </div>
     </div>

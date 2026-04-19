@@ -1,6 +1,6 @@
 # ☀ Horus — Gestión de Reservas Turísticas
 
-**Versión : 1.5**
+**Versión : 1.6**
 
 Sistema de gestión de reservas para guía turístico independiente.
 Viator · GetYourGuide · Civitatis · WordPress · Manual → un solo panel de control.
@@ -29,7 +29,10 @@ Viator · GetYourGuide · Civitatis · WordPress · Manual → un solo panel de 
 | Admin — Integraciones | Configuración de webhooks por plataforma: URL, clave secreta, confirmación automática |
 | Admin — Temas de colores | 6 palettes (Noche, Océano, Bosque, Vino, Desierto, Ártico) — appliquées sans rechargement |
 | Notas de versión | Clic en "Horus vX.X" en el pie de página → historial completo de versiones |
-| Datos de demo | Carga 27 reservas + 35 bloqueados para pruebas realistas |
+| Conflictos de horario | Reservas solapadas marcadas automáticamente como ⚡ Conflicto (púrpura), distintas de Rechazada |
+| Cambio de estado manual | Clic en el badge de estado → modal de confirmación con 4 opciones |
+| Notificación de conflicto | Banner púrpura al crear una reserva que entra en conflicto |
+| Datos de demo | Carga 30 reservas (incl. 3 conflictos) + 35 bloqueados para pruebas realistas |
 | Vaciado completo | Elimina todas las reservas + bloqueados + logs con doble confirmación |
 | Notificaciones push | Alerta en el móvil Android al recibir una reserva, incluso con la app cerrada |
 | PWA instalable | Se instala en Android/iOS como una app nativa (sin Play Store) |
@@ -345,4 +348,4 @@ horus/
 
 ---
 
-*Horus v1.5 — Gestión de reservas turísticas*
+*Horus v1.6 — Gestión de reservas turísticas*

@@ -2,6 +2,25 @@
 
 ---
 
+## v1.6
+_Release date: 2026-04-19_
+_Status: Stable_
+
+### Bug fixes
+- **allDay filter reactive** — "☀ Solo jornada completa" toggle now filters instantly without page refresh (was missing from `useMemo` dependency array)
+- **Quick sort always visible** — "Ordenar: Fecha · Cliente · Tour · Pers." bar no longer hidden when the filter panel is open
+- **Blocked slot error in Spanish** — API error message changed from "Créneau bloqué" (French) to "Franja bloqueada" (Spanish)
+- **Conflict notification** — creating a booking that auto-receives conflict status now shows a dismissible purple banner above the form for ~8 seconds
+- **Error banner dismissible** — overlap error banner now has a ✕ button; also auto-clears when any filter or sort changes
+
+### Improvements
+- **Conflict color** — conflict status color changed from rose (#f43f5e) to purple (#a855f7) across all views (cards, calendar, tiles, banners)
+- **Calendar side panel — conflict status** — conflict bookings now display "⚡ Conflicto" badge in purple in the side panel (previously fell back to amber "Pendiente")
+- **Calendar side panel — conflict actions** — Aceptar / Rechazar buttons are now visible for conflict bookings in the calendar side panel (same as pending)
+- **Full Spanish UI** — all remaining French strings translated to Spanish (admin page descriptions, VersionFooter release notes)
+
+---
+
 ## v1.5
 _Release date: 2026-04-18_
 _Status: Stable_

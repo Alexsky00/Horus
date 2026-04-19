@@ -1,6 +1,6 @@
 import { prisma } from "./db";
 
-export type LogAction = "created" | "confirmed" | "refused" | "deleted";
+export type LogAction = "created" | "confirmed" | "refused" | "deleted" | "pending" | "conflict";
 
 export async function writeLog(
   action: LogAction,

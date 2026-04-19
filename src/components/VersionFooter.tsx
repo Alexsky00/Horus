@@ -3,6 +3,32 @@ import { useState } from "react";
 
 const RELEASE_NOTES: { version: string; date: string; status: string; sections: { title: string; items: string[] }[] }[] = [
   {
+    version: "v1.6",
+    date: "2026-04-19",
+    status: "Stable",
+    sections: [
+      {
+        title: "Correcciones",
+        items: [
+          "Filtro jornada completa — reacciona inmediatamente sin necesidad de recargar la página",
+          "Tri rápido — barra «Ordenar» siempre visible, incluso con el panel de filtros abierto",
+          "Error franja bloqueada — mensaje ahora en español: «Franja bloqueada: …»",
+          "Notificación de conflicto — banner púrpura al crear una reserva en conflicto (~8 s)",
+          "Banner de error — botón ✕ para cerrar manualmente + desaparece al cambiar filtro",
+        ],
+      },
+      {
+        title: "Mejoras",
+        items: [
+          "Color conflicto — cambiado de rosa a púrpura (#a855f7) en todas las vistas",
+          "Panel calendario — reservas en conflicto muestran «⚡ Conflicto» en púrpura (no «Pendiente»)",
+          "Panel calendario — botones Aceptar/Rechazar visibles también para reservas en conflicto",
+          "Traducción completa — todas las cadenas restantes en francés traducidas al español",
+        ],
+      },
+    ],
+  },
+  {
     version: "v1.5",
     date: "2026-04-18",
     status: "Stable",
@@ -10,9 +36,9 @@ const RELEASE_NOTES: { version: string; date: string; status: string; sections: 
       {
         title: "Mejoras",
         items: [
-          "Temas de colores — 6 palettes configurables depuis le menu Admin : Noche, Océano, Bosque, Vino, Desierto, Ártico",
-          "Application immédiate sans rechargement + sauvegardé en base",
-          "Correction flash — le thème est appliqué avant le premier rendu (script inline dans <head>)",
+          "Temas de colores — 6 paletas configurables desde el menú Admin: Noche, Océano, Bosque, Vino, Desierto, Ártico",
+          "Aplicación inmediata sin recarga + guardado en base de datos",
+          "Sin flash de tema — el tema se aplica antes del primer renderizado (script inline en <head>)",
         ],
       },
     ],
@@ -25,7 +51,7 @@ const RELEASE_NOTES: { version: string; date: string; status: string; sections: 
       {
         title: "Mejoras",
         items: [
-          "Notas de versión — clic sur le numéro de version en pied de page affiche l'historique complet des releases",
+          "Notas de versión — clic en el número de versión al pie muestra el historial completo de versiones",
         ],
       },
     ],
@@ -38,14 +64,14 @@ const RELEASE_NOTES: { version: string; date: string; status: string; sections: 
       {
         title: "Mejoras",
         items: [
-          "Champ téléphone — numéro client sur les cartes, panneau calendrier et formulaires (lien tel: cliquable)",
-          "Recherche rapide — barre de recherche dans la vue calendrier (toutes les vues)",
-          "Filtres statut — boutons Todos / Pendiente / Confirmada / Rechazada dans le calendrier",
-          "Toggle jornada completa — filtre «☀ Solo jornada completa» dans le dashboard",
-          "Pré-remplissage formulaire blocage — date initialisée sur la période visible dans le calendrier",
-          "Création depuis le calendrier — clic sur un créneau semaine/jour ouvre le formulaire de réservation pré-rempli",
-          "Planning — bloquages multi-jours groupés en une seule ligne (ex. «3 may – 14 may»)",
-          "Vue semaine/jour — suppression de l'en-tête «all day», labels sur deux lignes sans débordement",
+          "Campo teléfono — número del cliente en las tarjetas, panel del calendario y formularios (enlace tel: clicable)",
+          "Búsqueda rápida — barra de búsqueda en la vista calendario (todas las vistas)",
+          "Filtros estado — botones Todos / Pendiente / Confirmada / Rechazada en el calendario",
+          "Toggle jornada completa — filtro «☀ Solo jornada completa» en el dashboard",
+          "Prellenado formulario bloqueo — fecha inicializada en el período visible en el calendario",
+          "Creación desde el calendario — clic en un hueco semana/día abre el formulario de reserva prellenado",
+          "Planificación — bloqueos de varios días agrupados en una sola fila (ej. «3 may – 14 may»)",
+          "Vista semana/día — eliminación del encabezado «all day», etiquetas en dos líneas sin desbordamiento",
         ],
       },
     ],
@@ -58,17 +84,17 @@ const RELEASE_NOTES: { version: string; date: string; status: string; sections: 
       {
         title: "Correcciones",
         items: [
-          "Formulaire — heure initialisée à 09:00 au lieu de l'heure courante",
-          "Sélecteur d'heure (blocage) — <select> 06:00–21:30 à la place de l'input natif",
-          "ExternalRef — référence OTA supprimée du panneau latéral du calendrier",
+          "Formulario — hora inicializada a 09:00 en lugar de la hora actual",
+          "Selector de hora (bloqueo) — <select> 06:00–21:30 en lugar del input nativo",
+          "ExternalRef — referencia OTA eliminada del panel lateral del calendario",
         ],
       },
       {
         title: "Mejoras",
         items: [
-          "Conflit jornada completa — une réservation allDay bloque toute la journée pour les autres réservations",
-          "Calendrier semaine/jour — réservations et bloquages allDay affichés comme un bloc 06:00–22:00",
-          "Couleur bloquage — unifié à slate-700 (#334155) pour la lisibilité sur fond sombre",
+          "Conflicto jornada completa — una reserva allDay bloquea todo el día para las demás reservas",
+          "Calendario semana/día — reservas y bloqueos allDay mostrados como un bloque 06:00–22:00",
+          "Color bloqueo — unificado a slate-700 (#334155) para la legibilidad sobre fondo oscuro",
         ],
       },
     ],
@@ -81,19 +107,19 @@ const RELEASE_NOTES: { version: string; date: string; status: string; sections: 
       {
         title: "Correcciones",
         items: [
-          "Code réservation — badge amber (RCV, RC…) visible sur les cartes et dans le panneau",
-          "ExternalRef — codes OTA masqués dans toute l'interface (conservés en base)",
-          "Indicateur jornada completa — «☀ Toda la jornada» affiché sur les cartes et le panneau",
-          "Sélecteur d'heure — <select> avec pas de 30 min (06:00–21:30), compatible tous navigateurs",
-          "Timezone Gantt — toLocalKey() corrige le décalage d'un jour sur les événements allDay",
-          "Navigation calendrier — la vue ne repart plus à aujourd'hui lors d'un changement de vue",
-          "Réinitialisation — le reset complet vide aussi les bloquages et redirige vers le dashboard",
+          "Código reserva — badge amber (RCV, RC…) visible en las tarjetas y en el panel",
+          "ExternalRef — códigos OTA ocultos en toda la interfaz (conservados en base de datos)",
+          "Indicador jornada completa — «☀ Toda la jornada» mostrado en las tarjetas y el panel",
+          "Selector de hora — <select> con paso de 30 min (06:00–21:30), compatible con todos los navegadores",
+          "Timezone Gantt — toLocalKey() corrige el desfase de un día en los eventos allDay",
+          "Navegación calendario — la vista ya no vuelve a hoy al cambiar de vista",
+          "Reinicialización — el reset completo también vacía los bloqueos y redirige al dashboard",
         ],
       },
       {
         title: "Mejoras",
         items: [
-          "Planning — colonne «Cliente» ajoutée au tableau des réservations confirmées",
+          "Planificación — columna «Cliente» añadida a la tabla de reservas confirmadas",
         ],
       },
     ],
@@ -106,15 +132,15 @@ const RELEASE_NOTES: { version: string; date: string; status: string; sections: 
       {
         title: "Funcionalidades iniciales",
         items: [
-          "Dashboard — liste, tuiles stat, recherche, filtres, tri, pagination",
-          "Gestion réservations — créer, accepter, refuser, supprimer avec anti-double-booking",
-          "Créneaux bloqués — bloquer tout ou partie d'une journée",
-          "Calendrier — vues semaine/mois/jour, code couleur par statut, panneau latéral",
-          "Gantt mensuel — barres de réservations avec label décalé si dépassement",
-          "Planning — tableau mensuel des confirmées + bloquages",
-          "Logs — historique des actions filtrables",
-          "Données démo — 27 réservations + 35 bloquages sur 12 mois",
-          "PWA — installable sur mobile, notifications push",
+          "Dashboard — lista, fichas de estadísticas, búsqueda, filtros, ordenación, paginación",
+          "Gestión de reservas — crear, aceptar, rechazar, eliminar con anti-duplicados",
+          "Franjas bloqueadas — bloquear todo o parte de un día",
+          "Calendario — vistas semana/mes/día, código de color por estado, panel lateral",
+          "Gantt mensual — barras de reservas con etiqueta desplazada si hay desbordamiento",
+          "Planificación — tabla mensual de confirmadas + bloqueos",
+          "Logs — historial de acciones filtrables",
+          "Datos de demo — 27 reservas + 35 bloqueos en 12 meses",
+          "PWA — instalable en móvil, notificaciones push",
         ],
       },
     ],
@@ -131,7 +157,7 @@ export default function VersionFooter() {
           onClick={() => setOpen(true)}
           className="text-slate-600 text-xs hover:text-slate-400 transition-colors cursor-pointer"
         >
-          Horus v1.5
+          Horus v1.6
         </button>
       </footer>
 

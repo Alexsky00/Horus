@@ -11,7 +11,7 @@ export async function PATCH(
   const { id } = params;
   const { status } = await req.json();
 
-  if (!["confirmed", "refused"].includes(status)) {
+  if (!["pending", "confirmed", "refused", "conflict"].includes(status)) {
     return NextResponse.json({ error: "Status invalide" }, { status: 400 });
   }
 
@@ -58,9 +58,11 @@ export async function PATCH(
     data: { status },
   });
 
-  const emoji = status === "confirmed" ? "✅" : "❌";
+  const EMOJI: Record<string, string> = { confirmed: "✅", refused: "❌", pending: "🔄", conflict: "⚡" };
+  const LABEL: Record<string, string> = { confirmed: "confirmada", refused: "rechazada", pending: "pendiente", conflict: "en conflicto" };
+  const emoji = EMOJI[status] ?? "•";
   const msg = {
-    title: `${emoji} Reserva ${status === "confirmed" ? "confirmada" : "rechazada"}`,
+    title: `${emoji} Reserva ${LABEL[status] ?? status}`,
     body: `${booking.guestName} — ${booking.tourName} el ${booking.date.toLocaleDateString("es-ES")}`,
     url: "/",
   };
@@ -68,7 +70,7 @@ export async function PATCH(
   await Promise.allSettled([
     sendPushToAll(msg),
     sendEmailFallback(msg.title, msg.body),
-    writeLog(status as "confirmed" | "refused", id, `${booking.guestName} — ${booking.tourName} — ${booking.date.toLocaleDateString("es-ES")}`),
+    writeLog(status as "confirmed" | "refused" | "pending" | "conflict", id, `${booking.guestName} — ${booking.tourName} — ${booking.date.toLocaleDateString("es-ES")} [→ ${status}]`),
   ]);
 
   return NextResponse.json(booking);

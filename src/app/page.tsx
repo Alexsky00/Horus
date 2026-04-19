@@ -5,7 +5,7 @@ import PushSubscribe from "@/components/PushSubscribe";
 import { NATIONALITIES } from "@/lib/nationalities";
 import type { BlockedSlot } from "@/lib/types";
 
-type StatusFilter = "all" | "pending" | "confirmed" | "refused" | "blocked";
+type StatusFilter = "all" | "pending" | "confirmed" | "refused" | "conflict" | "blocked";
 type SortField = "date" | "guestName" | "tourName" | "participants" | "source";
 type SortDir = "asc" | "desc";
 
@@ -52,7 +52,7 @@ export default function Dashboard() {
     fetchBookings();
   }
 
-  async function handleAction(id: string, status: "confirmed" | "refused") {
+  async function handleAction(id: string, status: string) {
     setActionError(null);
     const res = await fetch(`/api/bookings/${id}`, {
       method: "PATCH",
@@ -72,8 +72,8 @@ export default function Dashboard() {
     else { setSortField(field); setSortDir("asc"); }
   }
 
-  // Remet à la page 1 à chaque changement de filtre/tri
-  useEffect(() => { setPage(1); }, [statusFilter, sourceFilter, search, dateFrom, dateTo, sortField, sortDir]);
+  // Remet à la page 1 et efface l'erreur à chaque changement de filtre/tri
+  useEffect(() => { setPage(1); setActionError(null); }, [statusFilter, sourceFilter, search, dateFrom, dateTo, allDayOnly, sortField, sortDir]);
 
   function resetFilters() {
     setStatusFilter("all");
@@ -114,7 +114,7 @@ export default function Dashboard() {
     });
 
     return list;
-  }, [bookings, statusFilter, sourceFilter, search, dateFrom, dateTo, sortField, sortDir]);
+  }, [bookings, statusFilter, sourceFilter, search, dateFrom, dateTo, allDayOnly, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(displayed.length / PAGE_SIZE));
   const paginated  = displayed.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -122,6 +122,7 @@ export default function Dashboard() {
   const pending   = bookings.filter((b) => b.status === "pending").length;
   const confirmed = bookings.filter((b) => b.status === "confirmed").length;
   const refused   = bookings.filter((b) => b.status === "refused").length;
+  const conflicts = bookings.filter((b) => b.status === "conflict").length;
   const activeFiltersCount = [
     statusFilter !== "all", sourceFilter !== "all",
     search, dateFrom, dateTo, allDayOnly,
@@ -133,12 +134,13 @@ export default function Dashboard() {
       <PushSubscribe />
 
       {/* Stats */}
-      <div className="grid grid-cols-5 gap-3">
-        <Stat label="Pendientes"  value={pending}                                          color="text-amber-400"  onClick={() => setStatusFilter("pending")} />
-        <Stat label="Confirmadas" value={confirmed}                                         color="text-green-400"  onClick={() => setStatusFilter("confirmed")} />
-        <Stat label="Rechazadas"  value={refused}                                           color="text-red-400"    onClick={() => setStatusFilter("refused")} />
-        <Stat label="Total"       value={bookings.length}                                   color="text-slate-300"  onClick={() => setStatusFilter("all")} />
-        <Stat label="🔒 Bloqueados" value={blocked.filter(bl => new Date(bl.date) >= new Date()).length} color="text-slate-400" onClick={() => setStatusFilter("blocked")} />
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+        <Stat label="Pendientes"   value={pending}                                                                   color="text-amber-400"  onClick={() => setStatusFilter("pending")} />
+        <Stat label="Confirmadas"  value={confirmed}                                                                  color="text-green-400"  onClick={() => setStatusFilter("confirmed")} />
+        <Stat label="Rechazadas"   value={refused}                                                                    color="text-red-400"    onClick={() => setStatusFilter("refused")} />
+        <Stat label="⚡ Conflictos" value={conflicts}                                                                 color="text-purple-400"   onClick={() => setStatusFilter("conflict")} highlight={conflicts > 0} />
+        <Stat label="Total"        value={bookings.length}                                                            color="text-slate-300"  onClick={() => setStatusFilter("all")} />
+        <Stat label="🔒 Bloqueados" value={blocked.filter(bl => new Date(bl.date) >= new Date()).length}              color="text-slate-400"  onClick={() => setStatusFilter("blocked")} />
       </div>
 
       {/* Barre de contrôle */}
@@ -182,6 +184,7 @@ export default function Dashboard() {
                 <option value="pending">Pendiente</option>
                 <option value="confirmed">Confirmada</option>
                 <option value="refused">Rechazada</option>
+                <option value="conflict">⚡ Conflicto</option>
                 <option value="blocked">🔒 Bloqueado</option>
               </select>
             </div>
@@ -258,22 +261,21 @@ export default function Dashboard() {
       )}
 
       {/* Tri rapide par colonnes */}
-      {!filtersOpen && (
-        <div className="flex gap-2 flex-wrap text-xs text-slate-500">
-          <span>Ordenar:</span>
-          {([["date","Fecha"],["guestName","Cliente"],["tourName","Tour"],["participants","Pers."]] as [SortField,string][]).map(([f, label]) => (
-            <button key={f} onClick={() => toggleSort(f)}
-              className={`hover:text-slate-300 transition-colors ${sortField === f ? "text-amber-400 font-medium" : ""}`}>
-              {label} {sortField === f ? (sortDir === "asc" ? "↑" : "↓") : ""}
-            </button>
-          ))}
-          <span className="ml-auto text-slate-600">{statusFilter === "blocked" ? `${blocked.length} bloqueado(s)` : `${displayed.length} resultado(s)`}</span>
-        </div>
-      )}
+      <div className="flex gap-2 flex-wrap text-xs text-slate-500">
+        <span>Ordenar:</span>
+        {([["date","Fecha"],["guestName","Cliente"],["tourName","Tour"],["participants","Pers."]] as [SortField,string][]).map(([f, label]) => (
+          <button key={f} onClick={() => toggleSort(f)}
+            className={`hover:text-slate-300 transition-colors ${sortField === f ? "text-amber-400 font-medium" : ""}`}>
+            {label} {sortField === f ? (sortDir === "asc" ? "↑" : "↓") : ""}
+          </button>
+        ))}
+        <span className="ml-auto text-slate-600">{statusFilter === "blocked" ? `${blocked.length} bloqueado(s)` : `${displayed.length} resultado(s)`}</span>
+      </div>
 
       {actionError && (
-        <div className="bg-red-900/40 border border-red-700 text-red-300 rounded px-4 py-2 text-sm">
-          {actionError}
+        <div className="bg-red-900/40 border border-red-700 text-red-300 rounded px-4 py-2 text-sm flex items-center justify-between gap-2">
+          <span>{actionError}</span>
+          <button onClick={() => setActionError(null)} className="text-red-400 hover:text-red-200 leading-none shrink-0">✕</button>
         </div>
       )}
 
@@ -409,9 +411,13 @@ export default function Dashboard() {
   );
 }
 
-function Stat({ label, value, color, onClick }: { label: string; value: number; color: string; onClick: () => void }) {
+function Stat({ label, value, color, onClick, highlight }: { label: string; value: number; color: string; onClick: () => void; highlight?: boolean }) {
   return (
-    <button onClick={onClick} className="bg-slate-800 rounded-lg p-3 border border-slate-700 text-center w-full hover:border-slate-500 transition-colors">
+    <button onClick={onClick} className={`rounded-lg p-3 border text-center w-full transition-colors ${
+      highlight && value > 0
+        ? "bg-purple-950/40 border-purple-500/60 hover:border-purple-400 animate-pulse"
+        : "bg-slate-800 border-slate-700 hover:border-slate-500"
+    }`}>
       <div className={`text-2xl font-bold ${color}`}>{value}</div>
       <div className="text-slate-400 text-xs mt-0.5">{label}</div>
     </button>
@@ -422,6 +428,7 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [conflictWarning, setConflictWarning] = useState<string | null>(null);
   const [form, setForm] = useState({
     source: "viator",
     guestName: "Juan García",
@@ -452,8 +459,13 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
         setError(data.error ?? `Error ${res.status} — comprueba que la base de datos está conectada`);
         return;
       }
+      const created = await res.json().catch(() => ({}));
       setOpen(false);
       onCreated();
+      if (created?.status === "conflict") {
+        setConflictWarning(`⚡ Conflicto detectado — la reserva de ${form.guestName} se ha creado con estado Conflicto. Revísala antes de aceptar.`);
+        setTimeout(() => setConflictWarning(null), 8000);
+      }
     } catch {
       setError("No se puede conectar con el servidor. ¿Está corriendo npm run dev?");
     } finally {
@@ -463,6 +475,12 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
 
   return (
     <div className="border-t border-slate-700 pt-4">
+      {conflictWarning && (
+        <div className="mb-3 bg-purple-900/40 border border-purple-600 text-purple-300 rounded px-4 py-2 text-sm flex items-center justify-between gap-2">
+          <span>{conflictWarning}</span>
+          <button onClick={() => setConflictWarning(null)} className="text-purple-400 hover:text-purple-200 leading-none shrink-0">✕</button>
+        </div>
+      )}
       <button onClick={() => setOpen(!open)} className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-semibold text-sm rounded-lg transition-colors">
         <span className="text-lg leading-none">+</span> Nueva reserva
       </button>

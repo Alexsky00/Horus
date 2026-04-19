@@ -187,6 +187,29 @@ export async function POST() {
       duration: 300, nationality: "ES", routeType: "larga", allDay: false,
       status: "pending", externalRef: null, notes: null,
     },
+
+    // --- Conflictos (se superponen con reservas confirmadas) ---
+    // Conflicto 1 : chevauchement horaire avec Sophie Martin (j+1, 09:00–11:00)
+    {
+      source: "getyourguide", tourName: "Bardenas Reales", guestName: "Thomas Petit",
+      guestEmail: "thomas@mail.fr", phone: "+33 6 55 44 33 22", date: d(1, 10), participants: 2,
+      duration: 120, nationality: "FR", routeType: "corta", allDay: false,
+      status: "conflict", externalRef: "GYG-C01", notes: "Recibido mientras Sophie Martin estaba confirmada en el mismo horario",
+    },
+    // Conflicto 2 : même jour que Carlos López (jornada completa, j+3)
+    {
+      source: "viator", tourName: "Sierra de Urbasa", guestName: "Wei Zhang",
+      guestEmail: "wei@mail.cn", phone: "+86 138 0013 8000", date: d(3, 10), participants: 4,
+      duration: 180, nationality: "CN", routeType: "media", allDay: false,
+      status: "conflict", externalRef: "VIA-C02", notes: "Recibido el mismo día que la jornada completa de Carlos López",
+    },
+    // Conflicto 3 : chevauchement avec Emma Johnson (j+7, 11:00–15:00)
+    {
+      source: "civitatis", tourName: "Ruta del Vino Navarra", guestName: "Marta González",
+      guestEmail: "marta@mail.es", phone: "+34 611 223 344", date: d(7, 13), participants: 6,
+      duration: 120, nationality: "ES", routeType: "media", allDay: false,
+      status: "conflict", externalRef: "CIV-C03", notes: "Se solapa con Emma Johnson (11:00–15:00)",
+    },
   ];
 
   // Helper : date absolue
@@ -251,7 +274,7 @@ export async function POST() {
       data: {
         action: "created",
         bookingId: null,
-        details: `[DEMO] Datos de demo cargados : ${bookings.length} reservas + ${blockedSlots.length} bloqueados`,
+        details: `[DEMO] Datos de demo cargados : ${bookings.length} reservas (incl. ${bookings.filter(b => b.status === "conflict").length} conflictos) + ${blockedSlots.length} bloqueados`,
       },
     });
 

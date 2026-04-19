@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
 
   if (blockedConflict) {
     return NextResponse.json(
-      { error: `Créneau bloqué${blockedConflict.reason ? ` : ${blockedConflict.reason}` : ""}` },
+      { error: `Franja bloqueada${blockedConflict.reason ? `: ${blockedConflict.reason}` : ""}` },
       { status: 409 }
     );
   }
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
       phone: phone ?? null,
       notes: notes ?? null,
       externalRef: externalRef ?? null,
-      status: conflict ? "refused" : "pending",
+      status: conflict ? "conflict" : "pending",
     },
   });
 

@@ -2,6 +2,38 @@
 
 ---
 
+## v1.6
+_Date: 2026-04-19_
+
+### Changes from v1.5
+
+**allDayOnly filter fix**
+`allDayOnly` state was absent from the `displayed` `useMemo` dependency array and from the page-reset `useEffect` in `page.tsx`. Added to both — filter now reacts immediately on toggle without requiring a page refresh.
+
+**Quick sort always visible**
+Removed the `{!filtersOpen && ...}` wrapper around the quick sort bar in `page.tsx`. Sort buttons (Fecha / Cliente / Tour / Pers.) are now always rendered regardless of whether the filter panel is open.
+
+**Conflict notification banner**
+`SimulateOTA.submit()` now reads the created booking's JSON response. If `status === "conflict"`, a dismissible purple banner is rendered above the "+ Nueva reserva" button. Auto-dismisses after 8 seconds via `setTimeout`. State: `conflictWarning: string | null`.
+
+**Error banner UX**
+- Added ✕ dismiss button to the `actionError` banner on the dashboard.
+- `actionError` is now cleared in the filter/sort reset `useEffect` (alongside `setPage(1)`), so changing any filter removes stale error messages automatically.
+
+**"Franja bloqueada" — Spanish error**
+`POST /api/bookings/route.ts`: error string changed from `"Créneau bloqué"` to `"Franja bloqueada"`.
+
+**Conflict color — purple**
+All conflict status colors migrated from rose (`rose-*` Tailwind, `#f43f5e` hex) to purple (`purple-*`, `#a855f7`). Files affected: `BookingCard.tsx`, `page.tsx`, `calendar/page.tsx`, `Calendar.tsx`.
+
+**Calendar side panel — conflict status**
+`STATUS_STYLES` in `calendar/page.tsx` was missing a `conflict` entry, causing conflict bookings to fall back to `STATUS_STYLES.pending` (amber). Added `conflict: { label: "⚡ Conflicto", cls: "bg-purple-500/20 text-purple-400", border: "border-purple-500" }`. The fallback for unknown statuses now uses a neutral slate style instead of forcing "Pendiente".
+
+**Calendar side panel — conflict actions**
+`selected.status === "pending"` condition widened to `selected.status === "pending" || selected.status === "conflict"` so that Aceptar / Rechazar buttons are visible for conflict bookings in the side panel.
+
+---
+
 ## v1.5
 _Date: 2026-04-18_
 

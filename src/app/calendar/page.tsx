@@ -15,9 +15,10 @@ const SOURCE_COLORS: Record<string, string> = {
 };
 
 const STATUS_STYLES: Record<string, { label: string; cls: string; border: string }> = {
-  pending:   { label: "Pendiente",  cls: "bg-amber-500/20 text-amber-300",  border: "border-amber-500" },
-  confirmed: { label: "Confirmada", cls: "bg-green-500/20 text-green-300",  border: "border-green-500" },
-  refused:   { label: "Rechazada",  cls: "bg-red-500/20 text-red-400",      border: "border-red-500"   },
+  pending:   { label: "Pendiente",    cls: "bg-amber-500/20 text-amber-300",   border: "border-amber-500"  },
+  confirmed: { label: "Confirmada",   cls: "bg-green-500/20 text-green-300",   border: "border-green-500"  },
+  refused:   { label: "Rechazada",    cls: "bg-red-500/20 text-red-400",       border: "border-red-500"    },
+  conflict:  { label: "⚡ Conflicto", cls: "bg-purple-500/20 text-purple-400", border: "border-purple-500" },
 };
 
 function formatDuration(minutes: number): string {
@@ -190,7 +191,7 @@ export default function CalendarPage() {
     fetchBookings();
   }
 
-  const st = selected ? (STATUS_STYLES[selected.status] ?? STATUS_STYLES.pending) : null;
+  const st = selected ? (STATUS_STYLES[selected.status] ?? { label: selected.status, cls: "bg-slate-500/20 text-slate-400", border: "border-slate-500" }) : null;
   const date = selected ? new Date(selected.date) : null;
   const dateStr = date?.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const timeStr = date?.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
@@ -378,12 +379,21 @@ export default function CalendarPage() {
           placeholder="Buscar cliente, tour..."
           className="flex-1 min-w-36 bg-slate-800 border border-slate-600 rounded-full px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
         />
-        {(["", "pending", "confirmed", "refused"] as const).map((s) => (
-          <button key={s} onClick={() => setCalendarStatusFilter(s)}
-            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${calendarStatusFilter === s ? "bg-amber-500 border-amber-500 text-black font-medium" : "border-slate-600 text-slate-400 hover:border-slate-400"}`}>
-            {s === "" ? "Todos" : s === "pending" ? "Pendiente" : s === "confirmed" ? "Confirmada" : "Rechazada"}
-          </button>
-        ))}
+        {(["", "pending", "confirmed", "refused", "conflict"] as const).map((s) => {
+          const LABELS: Record<string, string> = { "": "Todos", pending: "Pendiente", confirmed: "Confirmada", refused: "Rechazada", conflict: "⚡ Conflicto" };
+          const active = calendarStatusFilter === s;
+          const isConflict = s === "conflict";
+          return (
+            <button key={s} onClick={() => setCalendarStatusFilter(s)}
+              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                active
+                  ? isConflict ? "bg-purple-500 border-purple-500 text-white font-medium" : "bg-amber-500 border-amber-500 text-black font-medium"
+                  : isConflict ? "border-purple-500/50 text-purple-400 hover:border-purple-400" : "border-slate-600 text-slate-400 hover:border-slate-400"
+              }`}>
+              {LABELS[s]}
+            </button>
+          );
+        })}
       </div>
 
       <div className="flex gap-4 flex-col lg:flex-row">
@@ -489,7 +499,7 @@ export default function CalendarPage() {
             )}
 
             {/* Actions */}
-            {selected.status === "pending" && (
+            {(selected.status === "pending" || selected.status === "conflict") && (
               <div className="flex gap-2">
                 <button
                   onClick={() => handleAction(selected.id, "confirmed")}
