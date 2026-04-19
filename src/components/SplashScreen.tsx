@@ -11,8 +11,8 @@ export default function SplashScreen() {
       setPhase("done");
       return;
     }
-    const t1 = setTimeout(() => setPhase("hold"), 600);   // fin du fade-in logo
-    const t2 = setTimeout(() => setPhase("out"),  1400);  // début du fade-out overlay
+    const t1 = setTimeout(() => setPhase("hold"), 1000);   // fin du fade-in logo
+    const t2 = setTimeout(() => setPhase("out"),  2800);  // début du fade-out overlay
     const t3 = setTimeout(() => {
       setPhase("done");
       sessionStorage.setItem("horus-splash-done", "1");
