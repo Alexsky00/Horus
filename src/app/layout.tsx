@@ -3,6 +3,7 @@ import "./globals.css";
 import "flag-icons/css/flag-icons.min.css";
 import VersionFooter from "@/components/VersionFooter";
 import ThemeLoader from "@/components/ThemeLoader";
+import SplashScreen from "@/components/SplashScreen";
 
 export const metadata: Metadata = {
   title: "Horus — Reservas",
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen">
         <ThemeLoader />
+        <SplashScreen />
         <header className="bg-slate-800 border-b border-slate-700 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-amber-400 font-bold text-xl">☀ HORUS</span>

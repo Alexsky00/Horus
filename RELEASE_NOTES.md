@@ -18,6 +18,7 @@ _Status: Stable_
 - **Calendar side panel — conflict status** — conflict bookings now display "⚡ Conflicto" badge in purple in the side panel (previously fell back to amber "Pendiente")
 - **Calendar side panel — conflict actions** — Aceptar / Rechazar buttons are now visible for conflict bookings in the calendar side panel (same as pending)
 - **Full Spanish UI** — all remaining French strings translated to Spanish (admin page descriptions, VersionFooter release notes)
+- **Splash screen** — animated logo transition on first app open (scale + fade in, progress bar, fade out); plays once per session
 
 ---
 

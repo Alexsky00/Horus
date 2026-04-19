@@ -32,6 +32,15 @@ All conflict status colors migrated from rose (`rose-*` Tailwind, `#f43f5e` hex)
 **Calendar side panel — conflict actions**
 `selected.status === "pending"` condition widened to `selected.status === "pending" || selected.status === "conflict"` so that Aceptar / Rechazar buttons are visible for conflict bookings in the side panel.
 
+**Splash screen** (`src/components/SplashScreen.tsx`)
+Client component mounted in `layout.tsx` (alongside `ThemeLoader`). Renders a fixed full-screen overlay using `var(--bg)` and `var(--accent)` — adapts to the active theme. Animation phases controlled by `useState` + `useEffect` timeouts:
+- `0–600ms` : logo scales in (cubic-bezier spring) + fade in
+- `600–1400ms` : hold; CSS `@keyframes horus-progress` fills the amber progress bar
+- `1400–2000ms` : overlay fades out (`opacity: 0`, `transition 0.55s`)
+- `2000ms` : component unmounts, `sessionStorage.setItem("horus-splash-done", "1")`
+
+`sessionStorage` flag prevents the splash from replaying on in-app navigation. Replays only on new tab/session (intended for PWA cold start).
+
 ---
 
 ## v1.5

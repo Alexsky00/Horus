@@ -24,6 +24,7 @@ const RELEASE_NOTES: { version: string; date: string; status: string; sections: 
           "Panel calendario — reservas en conflicto muestran «⚡ Conflicto» en púrpura (no «Pendiente»)",
           "Panel calendario — botones Aceptar/Rechazar visibles también para reservas en conflicto",
           "Traducción completa — todas las cadenas restantes en francés traducidas al español",
+          "Splash screen — transición animada con el logo al abrir la app (una vez por sesión)",
         ],
       },
     ],
