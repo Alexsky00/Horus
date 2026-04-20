@@ -49,8 +49,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <a href="/planning" className="text-slate-300 hover:text-amber-400 text-sm font-medium">
               Planning
             </a>
-            <a href="/logs" className="text-slate-300 hover:text-amber-400 text-sm font-medium">
-              Logs
+            <a href="/stats" className="text-slate-300 hover:text-amber-400 text-sm font-medium">
+              Stats
             </a>
             <a href="/admin" className="text-slate-500 hover:text-slate-300 text-sm font-medium" title="Administración">
               ⚙

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HORUS — Test Suite v1.7</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f172a; --surface: #1e293b; --surface2: #263248;
+    --border: #334155; --text: #f1f5f9; --muted: #94a3b8; --muted2: #64748b;
+    --accent: #f59e0b;
+    --pass: #22c55e; --pass-bg: #14532d33;
+    --fail: #ef4444; --fail-bg: #7f1d1d33;
+    --skip: #64748b; --skip-bg: #1e293b;
+  }
+
+  body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5; }
+
+  /* ── Header ── */
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; position: sticky; top: 0; z-index: 100; }
+  .header-left h1 { font-size: 18px; font-weight: 700; color: var(--accent); }
+  .header-left p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .header-right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .tester-input { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; color: var(--text); font-size: 13px; width: 180px; }
+  .tester-input:focus { outline: none; border-color: var(--accent); }
+  .tester-input::placeholder { color: var(--muted2); }
+
+  /* ── Buttons ── */
+  .btn { border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-accent { background: var(--accent); color: #000; }
+  .btn-ghost { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .btn-danger { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
+
+  /* ── Progress bar ── */
+  .progress-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .progress-track { flex: 1; min-width: 120px; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width .3s; }
+  .progress-stats { display: flex; gap: 12px; font-size: 12px; }
+  .stat-pass { color: var(--pass); font-weight: 700; }
+  .stat-fail { color: var(--fail); font-weight: 700; }
+  .stat-skip { color: var(--skip); }
+  .stat-total { color: var(--muted); }
+
+  /* ── Content ── */
+  .content { max-width: 960px; margin: 0 auto; padding: 24px 16px 80px; }
+
+  /* ── Section ── */
+  .section { margin-bottom: 24px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .section-header { background: var(--surface); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
+  .section-header:hover { background: var(--surface2); }
+  .section-title { font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+  .section-badge { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 99px; }
+  .badge-new { background: #7c3aed33; color: #a78bfa; border: 1px solid #7c3aed55; }
+  .section-mini { display: flex; gap: 8px; font-size: 11px; }
+  .section-toggle { color: var(--muted2); font-size: 12px; }
+  .section-body { display: block; }
+  .section-body.collapsed { display: none; }
+
+  /* ── Test row ── */
+  .test-row { border-top: 1px solid var(--border); padding: 10px 16px; display: grid; grid-template-columns: 36px 1fr auto; gap: 8px; align-items: start; transition: background .1s; }
+  .test-row:hover { background: #ffffff05; }
+  .test-row.status-pass { border-left: 3px solid var(--pass); background: var(--pass-bg); }
+  .test-row.status-fail { border-left: 3px solid var(--fail); background: var(--fail-bg); }
+  .test-row.status-skip { border-left: 3px solid var(--skip); opacity: .6; }
+  .test-id { font-size: 11px; color: var(--muted2); font-weight: 600; padding-top: 2px; font-family: monospace; }
+  .test-content { min-width: 0; }
+  .test-action { color: var(--text); font-size: 13px; }
+  .test-action code { background: var(--surface2); border: 1px solid var(--border); border-radius: 3px; padding: 1px 4px; font-family: monospace; font-size: 12px; }
+  .test-expected { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .test-note { margin-top: 6px; width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 5px; padding: 5px 8px; color: var(--text); font-size: 12px; resize: vertical; min-height: 32px; font-family: inherit; }
+  .test-note:focus { outline: none; border-color: var(--accent); }
+  .test-note::placeholder { color: var(--muted2); }
+
+  /* ── Result buttons ── */
+  .result-btns { display: flex; gap: 4px; flex-shrink: 0; }
+  .rbtn { width: 30px; height: 30px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface2); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all .1s; }
+  .rbtn:hover { border-color: var(--muted); transform: scale(1.1); }
+  .rbtn.active-pass { background: var(--pass-bg); border-color: var(--pass); box-shadow: 0 0 0 1px var(--pass); }
+  .rbtn.active-fail { background: var(--fail-bg); border-color: var(--fail); box-shadow: 0 0 0 1px var(--fail); }
+  .rbtn.active-skip { background: var(--skip-bg); border-color: var(--skip); box-shadow: 0 0 0 1px var(--skip); }
+
+  /* ── Summary footer ── */
+  .summary { margin-top: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; }
+  .summary h2 { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; text-align: center; }
+  .summary-cell { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+  .summary-num { font-size: 28px; font-weight: 800; }
+  .summary-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* ── Print ── */
+  @media print {
+    body { background: #fff; color: #000; font-size: 12px; }
+    .header { background: #fff; border-color: #ccc; position: static; }
+    .header-left h1 { color: #000; }
+    .progress-bar, .header-right, .btn, .result-btns, .test-note { display: none !important; }
+    .section { border-color: #ccc; page-break-inside: avoid; }
+    .section-header { background: #f5f5f5; }
+    .section-body.collapsed { display: block !important; }
+    .test-row { border-color: #ddd; background: #fff !important; }
+    .test-row.status-pass { border-left-color: #16a34a; background: #f0fdf4 !important; }
+    .test-row.status-fail { border-left-color: #dc2626; background: #fef2f2 !important; }
+    .test-action { color: #000; }
+    .test-expected { color: #555; }
+    .test-id { color: #888; }
+    .status-indicator { display: inline-block; width: 60px; font-weight: 700; }
+    .print-result { display: block !important; font-size: 11px; font-weight: 700; margin-top: 2px; }
+  }
+  .print-result { display: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>HORUS — Test Suite v1.7</h1>
+    <p>2026-04-19 &nbsp;·&nbsp; http://localhost:3000</p>
+  </div>
+  <div class="header-right">
+    <input class="tester-input" id="testerName" placeholder="Tester name…" />
+    <button class="btn btn-ghost" onclick="saveJSON()">⬇ Save results</button>
+    <label class="btn btn-ghost" style="cursor:pointer">⬆ Load results<input type="file" accept=".json" onchange="loadJSON(event)" style="display:none"></label>
+    <button class="btn btn-ghost" onclick="window.print()">🖨 Print</button>
+    <button class="btn btn-danger" onclick="resetAll()">↺ Reset</button>
+  </div>
+</div>
+
+<div class="progress-bar">
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <div class="progress-stats">
+    <span class="stat-pass">✅ <span id="countPass">0</span> pass</span>
+    <span class="stat-fail">❌ <span id="countFail">0</span> fail</span>
+    <span class="stat-skip">⏭ <span id="countSkip">0</span> skip</span>
+    <span class="stat-total">— <span id="countPending">0</span> pending</span>
+  </div>
+</div>
+
+<div class="content" id="content"></div>
+
+<script>
+const STORAGE_KEY = "horus-tests-v1.7";
+
+const SECTIONS = [
+  { title: "Setup", tests: [
+    { id:"P1", action:"Run <code>npm run dev</code>", expected:"Server running at http://localhost:3000" },
+    { id:"P2", action:"Open <code>/logs</code> → <b>\"🗑 Vaciar toda la aplicación\"</b> → confirm twice", expected:"App reset, dashboard shows 0 everywhere" },
+    { id:"P3", action:"On <code>/logs</code> → <b>\"✦ Cargar datos de demo\"</b> → confirm", expected:"Success: ~80 historical bookings + 21 future + 35 blocked slots created" },
+  ]},
+  { title: "1 — Dashboard (/)", tests: [
+    { id:"1.1",  action:"Load the dashboard", expected:"5 tiles visible: Pendientes / Confirmadas / Rechazadas / Total / 🔒 Bloqueados" },
+    { id:"1.2",  action:"Check tile counts", expected:"Pendientes + Confirmadas + Rechazadas = Total" },
+    { id:"1.3",  action:"Click <b>Pendientes</b> tile", expected:"List filtered to pending bookings only" },
+    { id:"1.4",  action:"Click <b>Confirmadas</b> tile", expected:"List filtered to confirmed bookings" },
+    { id:"1.5",  action:"Click <b>Total</b> tile", expected:"All bookings visible" },
+    { id:"1.6",  action:"Click <b>🔒 Bloqueados</b> tile", expected:"Blocked slots list appears" },
+    { id:"1.7",  action:"Type a guest name in the search bar", expected:"Only matching bookings shown" },
+    { id:"1.8",  action:"Clear the search field", expected:"All bookings return" },
+    { id:"1.9",  action:"Open <b>Filtros</b> → select a platform", expected:"List filtered to that platform" },
+    { id:"1.10", action:"Click <b>Restablecer filtros</b>", expected:"All filters reset" },
+    { id:"1.11", action:"Click <b>Fecha</b> (quick sort)", expected:"Sorted by date ascending" },
+    { id:"1.12", action:"Click <b>Fecha</b> again", expected:"Sort reversed (descending)" },
+    { id:"1.13", action:"Check pagination", expected:"Navigation buttons visible and working" },
+    { id:"1.14", action:"Inspect a pending booking card", expected:"✓ Aceptar and ✗ Rechazar buttons visible" },
+    { id:"1.15", action:"Inspect a confirmed booking card", expected:"Green banner, no Aceptar/Rechazar buttons" },
+    { id:"1.16", action:"Check nationality flags", expected:"SVG flag displayed — no raw letter codes" },
+  ]},
+  { title: "2 — Create a Booking", tests: [
+    { id:"2.1", action:"Click <b>+ Nueva reserva</b>", expected:"Form opens" },
+    { id:"2.2", action:"Submit with empty fields", expected:"Error: \"Faltan campos obligatorios\"" },
+    { id:"2.3", action:"Fill all required fields and submit", expected:"Booking created, Total tile +1" },
+    { id:"2.4", action:"Select a nationality", expected:"Flag visible on the created booking card" },
+    { id:"2.5", action:"Check \"Toda la jornada\"", expected:"Time and duration fields disappear" },
+    { id:"2.6", action:"Check time selector", expected:"30-min steps only (09:00, 09:30…) — no quarter hours" },
+    { id:"2.7", action:"Create booking A (09:00, 2h) → confirm it. Create booking B (09:30, same day)", expected:"Booking B gets status \"conflict\" automatically" },
+    { id:"2.8", action:"Create a booking on a fully blocked day", expected:"Error \"Franja bloqueada\" displayed" },
+  ]},
+  { title: "3 — Booking Actions", tests: [
+    { id:"3.1", action:"On a pending card → <b>✓ Aceptar</b>", expected:"Status changes to \"confirmed\", tiles updated" },
+    { id:"3.2", action:"On a pending card → <b>✗ Rechazar</b>", expected:"Status changes to \"refused\"" },
+    { id:"3.3", action:"Try to confirm a booking conflicting with an existing confirmed one", expected:"Error message \"Conflicto de horario\"" },
+    { id:"3.4", action:"Click <b>Eliminar reserva</b> → confirm", expected:"Card disappears, Total -1" },
+    { id:"3.5", action:"Click <b>Eliminar reserva</b> → cancel", expected:"Nothing happens" },
+  ]},
+  { title: "4 — Calendar (/calendar)", tests: [
+    { id:"4.1",  action:"Load <code>/calendar</code>", expected:"Week view by default" },
+    { id:"4.2",  action:"Switch to Mes / Semana / Día / Lista views", expected:"Each view displays correctly" },
+    { id:"4.3",  action:"Navigate with ‹ / › / Hoy", expected:"Period changes, title updates" },
+    { id:"4.4",  action:"Check event colours (week view)", expected:"Amber = pending, Green = confirmed, Red = refused, Purple = conflict" },
+    { id:"4.5",  action:"Click a pending event", expected:"Side panel opens with Aceptar / Rechazar buttons" },
+    { id:"4.6",  action:"Click a conflict event", expected:"Aceptar / Rechazar buttons visible in side panel" },
+    { id:"4.7",  action:"Navigate to a day with an all-day block", expected:"Entire day shown in grey" },
+    { id:"4.8",  action:"Click a blocked slot → <b>Eliminar bloqueo</b>", expected:"Slot deleted, calendar updated" },
+    { id:"4.9",  action:"Click <b>🔒 Bloquear horario</b> → create an all-day block", expected:"Block created, visible in calendar" },
+    { id:"4.10", action:"Verify the all-day block falls on the correct day", expected:"No one-day offset" },
+  ]},
+  { title: "5 — Planning (/planning)", tests: [
+    { id:"5.1", action:"Open <code>/planning</code>", expected:"Table of confirmed bookings for the current month" },
+    { id:"5.2", action:"Check the summary bar", expected:"\"X reservas · Y personas · 🔒 Z bloqueados\"" },
+    { id:"5.3", action:"All-day booking row", expected:"Inicio = \"☀ Jornada\", Fin = \"—\"" },
+    { id:"5.4", action:"Navigate with ‹ / › and month selector", expected:"Month changes, data updates" },
+    { id:"5.5", action:"Navigate to a month with no activity", expected:"Message \"Sin actividad en [Mes] [Año]\"" },
+  ]},
+  { title: "6 — Statistics (/stats)", badge:"NEW v1.7", tests: [
+    { id:"6.1",  action:"Open <code>/stats</code>", expected:"Filter defaults to <b>Año completo</b> + current year" },
+    { id:"6.2",  action:"Check KPIs in \"Año completo\" mode", expected:"Data aggregated across the full year" },
+    { id:"6.3",  action:"Click <b>‹</b> in \"Año completo\" mode", expected:"Year goes back by one" },
+    { id:"6.4",  action:"Click <b>›</b> in \"Año completo\" mode", expected:"Year goes forward by one" },
+    { id:"6.5",  action:"Select a specific month (e.g. Marzo)", expected:"KPIs recalculated for March only" },
+    { id:"6.6",  action:"In month mode, click <b>‹</b> from Enero", expected:"Jumps to Diciembre of the previous year" },
+    { id:"6.7",  action:"In month mode, click <b>›</b> from Diciembre", expected:"Jumps to Enero of the next year" },
+    { id:"6.8",  action:"Switch back to \"Año completo\"", expected:"KPIs return to full-year aggregate" },
+    { id:"6.9",  action:"Check the bar chart", expected:"12 bars Ene → Dic, stacked colours (green / amber / red / purple)" },
+    { id:"6.10", action:"In month mode, check selected bar", expected:"Active month bar at full opacity, others at 40%" },
+    { id:"6.11", action:"In \"Año completo\" mode, check bars", expected:"No bar highlighted" },
+    { id:"6.12", action:"Hover a bar", expected:"Tooltip shows confirmed / pending / refused / conflict counts" },
+    { id:"6.13", action:"Click a bar", expected:"Month filter switches to that month" },
+    { id:"6.14", action:"Check the heatmap layout", expected:"12 independent mini-calendars (3 cols on mobile, 4 on desktop)" },
+    { id:"6.15", action:"Verify no cross-month contamination", expected:"March shows only days 1–31 of March" },
+    { id:"6.16", action:"Check padding cells", expected:"Empty (colourless) cells before day 1 and after last day of each month" },
+    { id:"6.17", action:"Hover a cell with bookings", expected:"Tooltip: date + confirmed count + other count" },
+    { id:"6.18", action:"Hover a cell with no bookings", expected:"Tooltip: \"Sin reservas\"" },
+    { id:"6.19", action:"Check colour scale", expected:"Dynamic: purple (few) → orange → yellow → green (many), relative to daily max" },
+    { id:"6.20", action:"Verify full year visible without scrolling", expected:"All 12 months fit within the viewport" },
+  ]},
+  { title: "7 — Logs (/logs)", tests: [
+    { id:"7.1", action:"Open <code>/logs</code>", expected:"Events listed: created / confirmed / refused / deleted" },
+    { id:"7.2", action:"Confirm a booking → check logs", expected:"\"confirmed\" entry added at the top" },
+    { id:"7.3", action:"Filter by type \"created\"", expected:"Only creation logs shown" },
+    { id:"7.4", action:"<b>Vaciar logs</b> → confirm", expected:"All logs deleted" },
+    { id:"7.5", action:"<b>🗑 Vaciar toda la aplicación</b> → confirm twice", expected:"Entire app reset (bookings + blocks + logs)" },
+    { id:"7.6", action:"Check the demo data message", expected:"Correct volumes: ~80 historical + 21 future + 35 blocked" },
+  ]},
+  { title: "8 — Admin (/admin)", badge:"NEW v1.7", tests: [
+    { id:"8.1", action:"Open <code>/admin</code>", expected:"Tariff fields disabled and semi-transparent while loading (placeholder \"…\")" },
+    { id:"8.2", action:"Once loaded, with no tariffs saved", expected:"Fields empty with placeholder \"ej: 120 / 200 / 350\"" },
+    { id:"8.3", action:"Enter 120 / 200 / 350 → <b>Guardar tarifas</b>", expected:"\"✓ Guardado\" confirmation appears" },
+    { id:"8.4", action:"Navigate away then back to <code>/admin</code>", expected:"Fields pre-filled with 120 / 200 / 350 from the database" },
+    { id:"8.5", action:"Edit a tariff → save → reload the page", expected:"Updated value persisted" },
+    { id:"8.6", action:"Switch theme (e.g. Océano)", expected:"Colours update instantly without page reload" },
+    { id:"8.7", action:"Refresh the page", expected:"Océano theme still active" },
+  ]},
+  { title: "9 — Cross-page Consistency", tests: [
+    { id:"9.1", action:"Confirm a booking from the dashboard", expected:"Shows as confirmed in /calendar AND /planning" },
+    { id:"9.2", action:"Delete a booking from /calendar", expected:"Disappears from dashboard and planning" },
+    { id:"9.3", action:"Create a blocked slot from /calendar", expected:"🔒 tile count updates on dashboard" },
+    { id:"9.4", action:"Perform actions → check /stats", expected:"KPIs and heatmap reflect the changes" },
+  ]},
+];
+
+// ── State ──
+let results = {};
+try { results = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch(e) {}
+
+function save() {
+  const name = document.getElementById("testerName").value;
+  results.__tester = name;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(results));
+  updateProgress();
+  updateSectionMinis();
+}
+
+function setResult(id, status) {
+  if (results[id]?.status === status) {
+    results[id] = { ...results[id], status: null };
+  } else {
+    results[id] = { status, note: results[id]?.note || "" };
+  }
+  const row = document.getElementById("row-" + id);
+  row.className = "test-row" + (results[id]?.status ? " status-" + results[id].status : "");
+  ["pass","fail","skip"].forEach(s => {
+    document.getElementById("rbtn-" + id + "-" + s)?.classList.toggle("active-" + s, results[id]?.status === s);
+  });
+  const pr = document.getElementById("pr-" + id);
+  if (pr) pr.textContent = results[id]?.status ? results[id].status.toUpperCase() : "";
+  save();
+}
+
+function setNote(id, val) {
+  results[id] = { status: results[id]?.status || null, note: val };
+  save();
+}
+
+function updateProgress() {
+  const all = SECTIONS.flatMap(s => s.tests);
+  const total = all.length;
+  const pass = all.filter(t => results[t.id]?.status === "pass").length;
+  const fail = all.filter(t => results[t.id]?.status === "fail").length;
+  const skip = all.filter(t => results[t.id]?.status === "skip").length;
+  const done = pass + fail + skip;
+  document.getElementById("progressFill").style.width = (done / total * 100) + "%";
+  document.getElementById("countPass").textContent = pass;
+  document.getElementById("countFail").textContent = fail;
+  document.getElementById("countSkip").textContent = skip;
+  document.getElementById("countPending").textContent = total - done;
+  const sPass = document.getElementById("s-pass"); if(sPass) sPass.textContent = pass;
+  const sFail = document.getElementById("s-fail"); if(sFail) sFail.textContent = fail;
+  const sPend = document.getElementById("s-pending"); if(sPend) sPend.textContent = total - done;
+}
+
+function updateSectionMinis() {
+  SECTIONS.forEach((sec, si) => {
+    const p = sec.tests.filter(t => results[t.id]?.status === "pass").length;
+    const f = sec.tests.filter(t => results[t.id]?.status === "fail").length;
+    const el = document.getElementById("mini-" + si);
+    if (el) el.innerHTML =
+      `<span class="stat-pass">✅ ${p}</span> <span class="stat-fail">❌ ${f}</span> <span class="stat-skip">⏭ ${sec.tests.length - p - f}</span>`;
+  });
+}
+
+function toggleSection(si) {
+  const body = document.getElementById("body-" + si);
+  const icon = document.getElementById("icon-" + si);
+  body.classList.toggle("collapsed");
+  icon.textContent = body.classList.contains("collapsed") ? "▶" : "▼";
+}
+
+// ── Render ──
+function render() {
+  const container = document.getElementById("content");
+  container.innerHTML = "";
+
+  SECTIONS.forEach((sec, si) => {
+    const div = document.createElement("div");
+    div.className = "section";
+    const badgeHTML = sec.badge ? `<span class="section-badge badge-new">${sec.badge}</span>` : "";
+    div.innerHTML = `
+      <div class="section-header" onclick="toggleSection(${si})">
+        <div class="section-title">${sec.title} ${badgeHTML}</div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div class="section-mini" id="mini-${si}"></div>
+          <span class="section-toggle" id="icon-${si}">▼</span>
+        </div>
+      </div>
+      <div class="section-body" id="body-${si}">
+        ${sec.tests.map(t => {
+          const r = results[t.id] || {};
+          const statusClass = r.status ? " status-" + r.status : "";
+          return `
+          <div class="test-row${statusClass}" id="row-${t.id}">
+            <div class="test-id">${t.id}</div>
+            <div class="test-content">
+              <div class="test-action">${t.action}</div>
+              <div class="test-expected">→ ${t.expected}</div>
+              <span class="print-result" id="pr-${t.id}">${r.status ? r.status.toUpperCase() : ""}</span>
+              <textarea class="test-note" placeholder="Notes…" oninput="setNote('${t.id}', this.value)">${r.note || ""}</textarea>
+            </div>
+            <div class="result-btns">
+              <button class="rbtn ${r.status==="pass"?"active-pass":""}" id="rbtn-${t.id}-pass" title="Pass" onclick="setResult('${t.id}','pass')">✅</button>
+              <button class="rbtn ${r.status==="fail"?"active-fail":""}" id="rbtn-${t.id}-fail" title="Fail" onclick="setResult('${t.id}','fail')">❌</button>
+              <button class="rbtn ${r.status==="skip"?"active-skip":""}" id="rbtn-${t.id}-skip" title="Skip" onclick="setResult('${t.id}','skip')">⏭</button>
+            </div>
+          </div>`;
+        }).join("")}
+      </div>`;
+    container.appendChild(div);
+  });
+
+  // Summary
+  const all = SECTIONS.flatMap(s => s.tests);
+  const total = all.length;
+  const summary = document.createElement("div");
+  summary.className = "summary";
+  summary.innerHTML = `
+    <h2>Summary</h2>
+    <div class="summary-grid">
+      <div class="summary-cell"><div class="summary-num stat-pass" id="s-pass">0</div><div class="summary-lbl">Passed</div></div>
+      <div class="summary-cell"><div class="summary-num stat-fail" id="s-fail">0</div><div class="summary-lbl">Failed</div></div>
+      <div class="summary-cell"><div class="summary-num stat-skip" id="s-skip">0</div><div class="summary-lbl">Skipped</div></div>
+      <div class="summary-cell"><div class="summary-num stat-total" id="s-pending">0</div><div class="summary-lbl">Pending</div></div>
+    </div>`;
+  container.appendChild(summary);
+
+  // Restore tester name
+  if (results.__tester) document.getElementById("testerName").value = results.__tester;
+  document.getElementById("testerName").addEventListener("input", save);
+
+  updateProgress();
+  updateSectionMinis();
+}
+
+// ── Export / Import ──
+function saveJSON() {
+  save();
+  const tester = results.__tester || "unknown";
+  const date = new Date().toISOString().slice(0, 10);
+  const payload = { version: "1.7", tester, date, results };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = `horus-tests-v1.7-${tester.replace(/\s+/g,"-")}-${date}.json`;
+  a.click();
+}
+
+function loadJSON(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      results = data.results || {};
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(results));
+      render();
+    } catch { alert("Invalid file."); }
+  };
+  reader.readAsText(file);
+}
+
+function resetAll() {
+  if (!confirm("Reset all results? This cannot be undone.")) return;
+  results = {};
+  localStorage.removeItem(STORAGE_KEY);
+  render();
+}
+
+render();
+</script>
+</body>
+</html>

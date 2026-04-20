@@ -1,5 +1,5 @@
 # Horus — Backlog
-_Dernière mise à jour : 2026-04-18_
+_Dernière mise à jour : 2026-04-20_
 
 ---
 
@@ -48,6 +48,27 @@ _Dernière mise à jour : 2026-04-18_
 
 ---
 
+## ⚠️ Limites connues — point de vue utilisateur
+
+| # | Domaine | Limite | Impact | Priorité |
+|---|---------|--------|--------|----------|
+| L1 | Sécurité | Pas d'authentification — quiconque a l'URL peut accéder et modifier toutes les données | Élevé si URL partagée | 🔴 Haute |
+| L2 | Multi-utilisateur | Pas de gestion multi-guide — modifications simultanées sans avertissement de conflit | Moyen | 🟠 Moyenne |
+| L3 | Intégrations | Saisie 100% manuelle — les plateformes n'alimentent pas encore Horus automatiquement | Élevé (quotidien) | 🔴 Haute (voir INT1–INT4) |
+| L4 | Récurrence | Pas de réservations récurrentes — un tour hebdomadaire doit être créé une par une | Moyen | 🟡 Basse |
+| L5 | Historique client | Pas de vue "toutes les réservations d'un client" à travers le temps | Faible | 🟡 Basse |
+| L6 | Facturation | Pas de tarification, devis ni facturation — Horus gère le planning uniquement | Faible | 🟡 Basse |
+| L7 | Notifications | Push uniquement sur Android + Chrome — iPhone (Safari) et Firefox non supportés | Élevé sur iOS | 🟠 Moyenne |
+| L8 | Notifications | Pas d'alerte par email en fallback si push non reçu | Moyen | 🟡 Basse |
+| L9 | Hors-ligne | Sans internet, les données ne chargent pas (PWA shell uniquement) | Élevé terrain | 🟠 Moyenne |
+| L10 | Export | Pas d'export PDF, Excel ou impression du planning | Faible | 🟡 Basse |
+| L11 | Sauvegarde | Pas de sauvegarde automatique — "Vaciar" est irréversible | Élevé si erreur | 🟠 Moyenne |
+| L12 | Infrastructure | Supabase free tier : 500 Mo DB, 2 Go bande passante/mois | Faible pour usage solo | 🟢 Surveillance |
+| L13 | Infrastructure | Vercel free tier : cold start ~1–2s après inactivité | Faible | 🟢 Surveillance |
+| L14 | Annulation | Pas de "Annuler" (undo) sur les actions — suppression définitive immédiate | Moyen | 🟡 Basse |
+
+---
+
 ## 📱 Distribution mobile (non planifiée)
 
 | # | Option | Description | Complexité | Prérequis | Statut |
@@ -86,6 +107,14 @@ Chaque endpoint doit valider une clé secrète (header `X-Webhook-Secret` ou HMA
 
 ---
 
+## 💡 Idées à implémenter
+
+| # | Écran | Idée | Complexité | Priorité |
+|---|-------|------|------------|----------|
+| F1 | Admin — Tarifas / Formulaire réservation | Appliquer automatiquement les tarifs de route (configurés dans Admin) aux **nouvelles réservations futures** dès leur création — si le tarif est modifié après coup, les réservations déjà existantes ne sont pas affectées | Basse | 🟡 Moyenne |
+
+---
+
 ## 💡 Idées livrées
 
 | # | Réf. test | Écran | Idée | Complexité | Statut |
@@ -109,4 +138,6 @@ Chaque endpoint doit valider une clé secrète (header `X-Webhook-Secret` ou HMA
 | **v1.3 stable** (2026-04-15) | — | I1 I2 I3 I4 I5 + champ tél | — |
 | **v1.4 stable** (2026-04-18) | — | Release notes cliquables dans le footer | — |
 | **v1.5 stable** (2026-04-18) | flash thème | 6 palettes de couleurs depuis Admin | — |
-| **Total** | **14** | **10** | **4** |
+| **v1.6 stable** (2026-04-19) | B1–B5 + traductions FR→ES | Conflit violet, splash screen, panel calendrier conflit | — |
+| **v1.7.2 stable** (2026-04-20) | Caché API, boutons passé, sync onglets | Stats heatmap + filtres, Admin tarifas pre-fill | — |
+| **Total** | **22** | **16** | **4** |

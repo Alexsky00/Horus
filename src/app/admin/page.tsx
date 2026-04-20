@@ -106,12 +106,17 @@ export default function AdminPage() {
   const [saved, setSaved] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [origin, setOrigin] = useState("");
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [themeSaving, setThemeSaving] = useState(false);
   const [themeSaved, setThemeSaved] = useState(false);
+  const [routePriceSaving, setRoutePriceSaving] = useState(false);
+  const [routePriceSaved, setRoutePriceSaved] = useState(false);
 
   useEffect(() => {
     setOrigin(window.location.origin);
-    fetch("/api/settings").then((r) => r.json()).then(setSettings);
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((data) => { setSettings(data); setSettingsLoaded(true); });
   }, []);
 
   function get(k: string, fallback = "") {
@@ -133,6 +138,22 @@ export default function AdminPage() {
     setSaving(null);
     setSaved(source);
     setTimeout(() => setSaved(null), 2000);
+  }
+
+  async function saveRoutePrices() {
+    setRoutePriceSaving(true);
+    await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        "price.route.corta": get("price.route.corta", ""),
+        "price.route.media": get("price.route.media", ""),
+        "price.route.larga": get("price.route.larga", ""),
+      }),
+    });
+    setRoutePriceSaving(false);
+    setRoutePriceSaved(true);
+    setTimeout(() => setRoutePriceSaved(false), 2000);
   }
 
   async function saveTheme(themeId: string) {
@@ -169,6 +190,61 @@ export default function AdminPage() {
         <p className="text-slate-400 text-sm mt-1">
           Configura los temas de la app y los flujos de entrada de reservas desde cada plataforma.
         </p>
+      </div>
+
+      {/* ── Logs ── */}
+      <div className="rounded-xl border border-slate-700 bg-slate-800/60 overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4">
+          <div>
+            <h2 className="text-white font-semibold text-sm">Logs</h2>
+            <p className="text-slate-400 text-xs mt-0.5">Historial de acciones — crear, confirmar, rechazar, eliminar</p>
+          </div>
+          <a
+            href="/logs"
+            className="px-4 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm transition-colors shrink-0"
+          >
+            Ver logs →
+          </a>
+        </div>
+      </div>
+
+      {/* ── Tarifas por ruta ── */}
+      <div className="rounded-xl border border-slate-700 bg-slate-800/60 overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-700 bg-slate-800/40">
+          <h2 className="text-white font-semibold text-sm">Tarifas por tipo de ruta</h2>
+          <p className="text-slate-400 text-xs mt-0.5">Precio de referencia (€) — se pre-rellena automáticamente al crear una reserva</p>
+        </div>
+        <div className="px-5 py-4">
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { key: "price.route.corta", label: "🟢 Ruta corta", placeholder: "ej: 120" },
+              { key: "price.route.media", label: "🟡 Ruta media", placeholder: "ej: 200" },
+              { key: "price.route.larga", label: "🔴 Ruta larga", placeholder: "ej: 350" },
+            ].map(({ key: k, label, placeholder }) => (
+              <div key={k}>
+                <label className="text-xs text-slate-400 block mb-1">{label}</label>
+                <div className="relative">
+                  <input
+                    type="number" min="0" step="1"
+                    value={get(k)}
+                    onChange={(e) => set(k, e.target.value)}
+                    placeholder={settingsLoaded ? placeholder : "…"}
+                    disabled={!settingsLoaded}
+                    className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white pr-7 placeholder-slate-500 disabled:opacity-50"
+                  />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs">€</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 flex items-center gap-3">
+            <button onClick={saveRoutePrices} disabled={routePriceSaving}
+              className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-sm font-medium rounded transition-colors disabled:opacity-50">
+              {routePriceSaving ? "Guardando…" : "Guardar tarifas"}
+            </button>
+            {routePriceSaved && <span className="text-green-400 text-xs">✓ Guardado</span>}
+          </div>
+        </div>
       </div>
 
       {/* ── Thème de couleurs ── */}

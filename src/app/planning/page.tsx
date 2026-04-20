@@ -81,6 +81,20 @@ export default function PlanningPage() {
     ]).then(([b, bl]) => { setBookings(b); setBlocked(bl); setLoading(false); });
   }, []);
 
+  // Re-fetch when the tab becomes visible again (multi-tab scenario)
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        Promise.all([
+          fetch("/api/bookings?status=confirmed").then((r) => r.json()),
+          fetch("/api/blocked").then((r) => r.json()),
+        ]).then(([b, bl]) => { setBookings(b); setBlocked(bl); });
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
+
   // Années disponibles depuis les réservations et les bloquages
   const years = useMemo(() => {
     const set = new Set<number>();

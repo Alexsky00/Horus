@@ -1,6 +1,6 @@
 # ☀ Horus — Gestión de Reservas Turísticas
 
-**Versión : 1.6**
+**Versión : 1.7.2**
 
 Sistema de gestión de reservas para guía turístico independiente.
 Viator · GetYourGuide · Civitatis · WordPress · Manual → un solo panel de control.
@@ -32,7 +32,9 @@ Viator · GetYourGuide · Civitatis · WordPress · Manual → un solo panel de 
 | Conflictos de horario | Reservas solapadas marcadas automáticamente como ⚡ Conflicto (púrpura), distintas de Rechazada |
 | Cambio de estado manual | Clic en el badge de estado → modal de confirmación con 4 opciones |
 | Notificación de conflicto | Banner púrpura al crear una reserva que entra en conflicto |
-| Datos de demo | Carga 30 reservas (incl. 3 conflictos) + 35 bloqueados para pruebas realistas |
+| Estadísticas | Heatmap anual (12 mini-calendarios), gráfico mensual por estado, KPIs, filtro año completo / mes |
+| Admin — Tarifas | Tarifas por tipo de ruta (corta/media/larga) configurables, auto-rellenadas en el formulario de reserva |
+| Datos de demo | Carga ~80 reservas históricas + 21 futuras (incl. conflictos) + 35 bloqueados para pruebas realistas |
 | Vaciado completo | Elimina todas las reservas + bloqueados + logs con doble confirmación |
 | Notificaciones push | Alerta en el móvil Android al recibir una reserva, incluso con la app cerrada |
 | PWA instalable | Se instala en Android/iOS como una app nativa (sin Play Store) |
@@ -302,9 +304,8 @@ horus/
 ├── .env.example                ← Plantilla vacía para compartir
 ├── RELEASE_NOTES.md            ← Historial de versiones
 ├── TECH_NOTES.md               ← Documentación técnica
-├── TESTS_MANUELS.md            ← Suite de tests (interno)
-├── TESTS_TESTER.txt            ← Ficha de tests para testeador externo
 ├── BACKLOG.md                  ← Bugs, mejoras e integraciones pendientes
+├── tests/                      ← Suites de tests manuales (interno + testador)
 │
 ├── prisma/
 │   └── schema.prisma           ← Modelos: Booking, BlockedSlot, Log, Setting, PushSubscription
@@ -348,4 +349,4 @@ horus/
 
 ---
 
-*Horus v1.6 — Gestión de reservas turísticas*
+*Horus v1.7.2 — Gestión de reservas turísticas*

@@ -23,6 +23,7 @@ model Booking {
   phone        String?  // téléphone du client
   notes        String?
   externalRef  String?  // référence OTA
+  price        Float?   // revenu total de la réservation (€), null = non renseigné
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }

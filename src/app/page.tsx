@@ -429,6 +429,7 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [conflictWarning, setConflictWarning] = useState<string | null>(null);
+  const [routePrices, setRoutePrices] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
     source: "viator",
     guestName: "Juan García",
@@ -442,7 +443,18 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
     nationality: "",
     routeType: "",
     notes: "",
+    price: "",
   });
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then(r => r.json())
+      .then((s: Record<string, string>) => setRoutePrices({
+        corta: s["price.route.corta"] ?? "",
+        media: s["price.route.media"] ?? "",
+        larga: s["price.route.larga"] ?? "",
+      }));
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -452,7 +464,7 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, participants: Number(form.participants), duration: form.duration ? Number(form.duration) : null }),
+        body: JSON.stringify({ ...form, participants: Number(form.participants), duration: form.duration ? Number(form.duration) : null, price: form.price ? Number(form.price) : null }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -564,7 +576,16 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
             </div>
             <div>
               <label className="text-xs text-slate-400 block mb-1">Tipo de ruta (opcional)</label>
-              <select value={form.routeType} onChange={(e) => setForm({ ...form, routeType: e.target.value })}
+              <select value={form.routeType} onChange={(e) => {
+                const rt = e.target.value;
+                const prevTariff = routePrices[form.routeType] ?? "";
+                const newTariff  = routePrices[rt] ?? "";
+                setForm(f => ({
+                  ...f,
+                  routeType: rt,
+                  price: (f.price === "" || f.price === prevTariff) ? newTariff : f.price,
+                }));
+              }}
                 className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
                 <option value="">— Sin especificar</option>
                 <option value="corta">🟢 Ruta corta</option>
@@ -597,6 +618,20 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
               </select>
             </div>
             )}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">
+                Precio (€) <span className="text-slate-600">opcional</span>
+              </label>
+              <div className="relative">
+                <input type="number" min="0" step="0.01" value={form.price}
+                  onChange={(e) => setForm({ ...form, price: e.target.value })}
+                  placeholder={form.routeType && routePrices[form.routeType] ? `Tarifa: ${routePrices[form.routeType]}` : "Ej: 250"}
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white pr-7 placeholder-slate-500" />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs">€</span>
+              </div>
+            </div>
           </div>
           <div>
             <label className="text-xs text-slate-400 block mb-1">Notas (opcional)</label>

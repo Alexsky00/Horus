@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HORUS — Patch Test Suite v1.7.1 · tiles-sync</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 1.5rem; }
+  h1 { font-size: 1.4rem; font-weight: 700; color: #fbbf24; margin-bottom: 0.25rem; }
+  .meta { font-size: 0.82rem; color: #64748b; margin-bottom: 1.5rem; }
+  .meta strong { color: #94a3b8; }
+
+  .patch-scope {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-left: 4px solid #fbbf24;
+    border-radius: 0.5rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+    color: #94a3b8;
+  }
+  .patch-scope strong { color: #fbbf24; }
+  .patch-scope ul { margin-top: 0.5rem; padding-left: 1.2rem; }
+  .patch-scope li { margin-bottom: 0.25rem; }
+
+  .tester-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .tester-row label { font-size: 0.85rem; color: #94a3b8; }
+  .tester-row input { background: #1e293b; border: 1px solid #334155; border-radius: 0.4rem; padding: 0.35rem 0.75rem; color: #e2e8f0; font-size: 0.85rem; width: 220px; }
+  .tester-row input:focus { outline: none; border-color: #fbbf24; }
+
+  .progress-bar { height: 6px; background: #1e293b; border-radius: 3px; margin-bottom: 1.5rem; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #fbbf24, #84cc16); border-radius: 3px; transition: width 0.3s; }
+  .progress-label { font-size: 0.75rem; color: #64748b; margin-bottom: 0.5rem; }
+
+  section { margin-bottom: 1.5rem; }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #1e293b; border: 1px solid #334155; border-radius: 0.5rem 0.5rem 0 0;
+    padding: 0.65rem 1rem; cursor: pointer; user-select: none;
+  }
+  .section-header:hover { background: #263345; }
+  .section-title { font-weight: 600; font-size: 0.95rem; color: #fbbf24; }
+  .section-stats { font-size: 0.78rem; color: #64748b; display: flex; gap: 0.75rem; }
+  .section-stats .s-pass { color: #4ade80; }
+  .section-stats .s-fail { color: #f87171; }
+  .section-stats .s-skip { color: #94a3b8; }
+  .section-body { border: 1px solid #334155; border-top: none; border-radius: 0 0 0.5rem 0.5rem; overflow: hidden; }
+  .section-body.collapsed { display: none; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+  th { background: #1a2535; color: #64748b; font-weight: 500; text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid #334155; }
+  tr.test-row { border-bottom: 1px solid #1e293b; }
+  tr.test-row:last-child { border-bottom: none; }
+  tr.test-row:hover { background: #162032; }
+  tr.test-row.status-pass { background: #052e16; }
+  tr.test-row.status-fail { background: #2d0f0f; }
+  tr.test-row.status-skip { background: #1a1a2e; }
+  td { padding: 0.55rem 0.75rem; vertical-align: top; }
+  td:first-child { width: 3rem; color: #475569; font-size: 0.78rem; font-family: monospace; white-space: nowrap; }
+  td.action-col { color: #cbd5e1; max-width: 240px; }
+  td.expected-col { color: #94a3b8; max-width: 240px; font-size: 0.82rem; }
+
+  .badge-new { display: inline-block; font-size: 0.68rem; font-weight: 700; background: #7c3aed; color: #e9d5ff; border-radius: 3px; padding: 0 4px; margin-left: 4px; vertical-align: middle; }
+  .badge-fix { display: inline-block; font-size: 0.68rem; font-weight: 700; background: #b45309; color: #fde68a; border-radius: 3px; padding: 0 4px; margin-left: 4px; vertical-align: middle; }
+  .badge-reg { display: inline-block; font-size: 0.68rem; font-weight: 700; background: #1e3a5f; color: #93c5fd; border-radius: 3px; padding: 0 4px; margin-left: 4px; vertical-align: middle; }
+
+  .btn-group { display: flex; gap: 4px; white-space: nowrap; }
+  .btn { border: none; border-radius: 5px; padding: 4px 10px; font-size: 0.78rem; cursor: pointer; font-weight: 600; transition: opacity 0.15s, transform 0.1s; }
+  .btn:active { transform: scale(0.94); }
+  .btn-pass { background: #166534; color: #4ade80; }
+  .btn-fail { background: #7f1d1d; color: #f87171; }
+  .btn-skip { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+  .btn.active-pass { background: #16a34a; color: #fff; }
+  .btn.active-fail { background: #dc2626; color: #fff; }
+  .btn.active-skip { background: #475569; color: #fff; }
+
+  .note-input { width: 100%; min-width: 160px; background: #0f172a; border: 1px solid #334155; border-radius: 0.3rem; padding: 0.3rem 0.5rem; color: #94a3b8; font-size: 0.78rem; resize: vertical; min-height: 36px; }
+  .note-input:focus { outline: none; border-color: #fbbf24; color: #e2e8f0; }
+
+  .setup-box { background: #1e293b; border: 1px solid #334155; border-left: 4px solid #38bdf8; border-radius: 0.5rem; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+  .setup-box h2 { color: #38bdf8; font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; }
+  .setup-row { display: flex; gap: 0.5rem; align-items: flex-start; margin-bottom: 0.4rem; font-size: 0.84rem; }
+  .setup-row .step-num { color: #38bdf8; font-weight: 700; min-width: 1.4rem; }
+  .setup-row .step-text { color: #94a3b8; }
+  .setup-row .step-text strong { color: #e2e8f0; }
+  .setup-row .step-text code { background: #0f172a; border: 1px solid #334155; border-radius: 3px; padding: 0 4px; font-size: 0.8rem; color: #fbbf24; }
+
+  .failed-banner {
+    background: #7f1d1d; border: 1px solid #dc2626; border-radius: 0.4rem; padding: 0.5rem 1rem; margin-bottom: 0.5rem; font-size: 0.82rem; color: #fca5a5;
+  }
+  .failed-banner strong { color: #f87171; }
+
+  .toolbar { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .toolbar button { background: #1e293b; border: 1px solid #334155; border-radius: 0.4rem; padding: 0.4rem 0.9rem; color: #94a3b8; font-size: 0.82rem; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+  .toolbar button:hover { background: #263345; border-color: #94a3b8; color: #e2e8f0; }
+  .toolbar button.danger { border-color: #7f1d1d; color: #f87171; }
+  .toolbar button.danger:hover { background: #450a0a; }
+
+  .summary-box { background: #1e293b; border: 1px solid #334155; border-radius: 0.5rem; padding: 1rem 1.25rem; margin-top: 1.5rem; }
+  .summary-box h2 { color: #fbbf24; font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem; }
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+  .summary-item { text-align: center; }
+  .summary-num { font-size: 1.6rem; font-weight: 700; }
+  .summary-label { font-size: 0.75rem; color: #64748b; }
+  .summary-pass { color: #4ade80; }
+  .summary-fail { color: #f87171; }
+  .summary-skip { color: #94a3b8; }
+  .summary-total { color: #fbbf24; }
+
+  @media print {
+    body { background: #fff; color: #000; padding: 0.5rem; }
+    .toolbar, .btn-group, .note-input, .tester-row, .patch-scope { display: none !important; }
+    table { font-size: 0.8rem; }
+    h1 { color: #000; }
+    th, td { border: 1px solid #ccc; }
+    tr.test-row.status-pass { background: #f0fff4 !important; }
+    tr.test-row.status-fail { background: #fff5f5 !important; }
+    .section-body.collapsed { display: block !important; }
+  }
+</style>
+</head>
+<body>
+
+<h1>HORUS — Patch Test Suite v1.7.1 <span style="color:#64748b;font-weight:400;font-size:1rem;">tiles-sync</span></h1>
+<div class="meta">
+  <strong>Target version:</strong> 1.8 &nbsp;·&nbsp;
+  <strong>Patch covers:</strong> NOK from v1.7 (tests 1.2 &amp; 9.1) + regressions &nbsp;·&nbsp;
+  <strong>Date:</strong> <span id="today"></span>
+</div>
+
+<div class="patch-scope">
+  <strong>Scope of this patch</strong>
+  <ul>
+    <li><strong>1.2 — Dashboard tile formula</strong> <span class="badge-fix">FIX</span> — The Conflicts tile is now included in the formula: Pendientes + Confirmadas + Rechazadas + ⚡Conflictos = Total</li>
+    <li><strong>9.1 — Cross-page sync</strong> <span class="badge-fix">FIX</span> — Calendar &amp; Planning now re-fetch automatically when their browser tab regains focus (visibilitychange event)</li>
+    <li>Regression tests: Dashboard tiles (1.1, 1.5, 1.6), other cross-page tests (9.2, 9.3, 9.4)</li>
+  </ul>
+</div>
+
+<div class="tester-row">
+  <label>Tester name:</label>
+  <input type="text" id="tester-name" placeholder="e.g. Clara" />
+</div>
+
+<div class="progress-label" id="progress-label">Progress: 0 / 0</div>
+<div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+
+<div class="toolbar">
+  <button onclick="saveResults()">💾 Save</button>
+  <button onclick="exportJSON()">⬇ Export JSON</button>
+  <button onclick="document.getElementById('import-file').click()">⬆ Import JSON</button>
+  <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)" />
+  <button onclick="window.print()">🖨 Print</button>
+  <button class="danger" onclick="resetAll()">↺ Reset</button>
+</div>
+
+<div class="setup-box">
+  <h2>Setup</h2>
+  <div class="setup-row"><span class="step-num">1.</span><span class="step-text">Run <code>npm run dev</code> — server at <strong>http://localhost:3000</strong></span></div>
+  <div class="setup-row"><span class="step-num">2.</span><span class="step-text">Open <code>/logs</code> → <strong>"🗑 Vaciar toda la aplicación"</strong> → confirm twice → full reset</span></div>
+  <div class="setup-row"><span class="step-num">3.</span><span class="step-text">On <code>/logs</code> → <strong>"✦ Cargar datos de demo"</strong> → confirm → ~80 historical + 21 future + 35 blocked slots created</span></div>
+  <div class="setup-row"><span class="step-num">4.</span><span class="step-text">Open <code>/</code> (Dashboard), <code>/calendar</code>, and <code>/planning</code> each in a <strong>separate browser tab</strong> — required for test 9.1</span></div>
+</div>
+
+<!-- SECTION 1 — Dashboard tiles (fix 1.2 + regressions 1.1, 1.5, 1.6) -->
+<section id="section-dashboard">
+  <div class="section-header" onclick="toggleSection('dashboard')">
+    <span class="section-title">1 — Dashboard Tiles</span>
+    <span class="section-stats" id="stats-dashboard"></span>
+  </div>
+  <div class="section-body" id="body-dashboard">
+    <div class="failed-banner">
+      <strong>1.2 was NOK in v1.7</strong> — formula did not account for the Conflictos tile. Verify the corrected formula below.
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="test-row" id="row-1.1">
+          <td>1.1</td>
+          <td class="action-col">Load the dashboard</td>
+          <td class="expected-col">6 tiles visible: Pendientes / Confirmadas / Rechazadas / ⚡ Conflictos / Total / 🔒 Bloqueados</td>
+          <td><div class="btn-group"><button class="btn btn-pass" onclick="setStatus('1.1','pass')">✅</button><button class="btn btn-fail" onclick="setStatus('1.1','fail')">❌</button><button class="btn btn-skip" onclick="setStatus('1.1','skip')">⏭</button></div></td>
+          <td><textarea class="note-input" id="note-1.1" oninput="saveNote('1.1')" placeholder="Notes..."></textarea></td>
+        </tr>
+        <tr class="test-row" id="row-1.2">
+          <td>1.2 <span class="badge-fix">FIX</span></td>
+          <td class="action-col">Add up tile counts: Pendientes + Confirmadas + Rechazadas + ⚡Conflictos</td>
+          <td class="expected-col">Result equals the Total tile value exactly (all four statuses sum to Total)</td>
+          <td><div class="btn-group"><button class="btn btn-pass" onclick="setStatus('1.2','pass')">✅</button><button class="btn btn-fail" onclick="setStatus('1.2','fail')">❌</button><button class="btn btn-skip" onclick="setStatus('1.2','skip')">⏭</button></div></td>
+          <td><textarea class="note-input" id="note-1.2" oninput="saveNote('1.2')" placeholder="Notes..."></textarea></td>
+        </tr>
+        <tr class="test-row" id="row-1.3">
+          <td>1.3</td>
+          <td class="action-col">Click the <strong>⚡ Conflictos</strong> tile</td>
+          <td class="expected-col">List filtered to conflict bookings only</td>
+          <td><div class="btn-group"><button class="btn btn-pass" onclick="setStatus('1.3','pass')">✅</button><button class="btn btn-fail" onclick="setStatus('1.3','fail')">❌</button><button class="btn btn-skip" onclick="setStatus('1.3','skip')">⏭</button></div></td>
+          <td><textarea class="note-input" id="note-1.3" oninput="saveNote('1.3')" placeholder="Notes..."></textarea></td>
+        </tr>
+        <tr class="test-row" id="row-1.4">
+          <td>1.4 <span class="badge-reg">REG</span></td>
+          <td class="action-col">Click the <strong>Total</strong> tile</td>
+          <td class="expected-col">All bookings visible (all statuses, including conflict)</td>
+          <td><div class="btn-group"><button class="btn btn-pass" onclick="setStatus('1.4','pass')">✅</button><button class="btn btn-fail" onclick="setStatus('1.4','fail')">❌</button><button class="btn btn-skip" onclick="setStatus('1.4','skip')">⏭</button></div></td>
+          <td><textarea class="note-input" id="note-1.4" oninput="saveNote('1.4')" placeholder="Notes..."></textarea></td>
+        </tr>
+        <tr class="test-row" id="row-1.5">
+          <td>1.5 <span class="badge-reg">REG</span></td>
+          <td class="action-col">Click the <strong>🔒 Bloqueados</strong> tile</td>
+          <td class="expected-col">Blocked slots list appears (table view)</td>
+          <td><div class="btn-group"><button class="btn btn-pass" onclick="setStatus('1.5','pass')">✅</button><button class="btn btn-fail" onclick="setStatus('1.5','fail')">❌</button><button class="btn btn-skip" onclick="setStatus('1.5','skip')">⏭</button></div></td>
+          <td><textarea class="note-input" id="note-1.5" oninput="saveNote('1.5')" placeholder="Notes..."></textarea></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- SECTION 9 — Cross-page sync (fix 9.1 + regressions 9.2, 9.3, 9.4) -->
+<section id="section-sync">
+  <div class="section-header" onclick="toggleSection('sync')">
+    <span class="section-title">9 — Cross-page Consistency</span>
+    <span class="section-stats" id="stats-sync"></span>
+  </div>
+  <div class="section-body" id="body-sync">
+    <div class="failed-banner">
+      <strong>9.1 was NOK in v1.7</strong> — calendar &amp; planning didn't update in multi-tab scenarios. Now fixed: tabs re-fetch on focus regain (visibilitychange).
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="test-row" id="row-9.1a">
+          <td>9.1a <span class="badge-fix">FIX</span></td>
+          <td class="action-col"><strong>Multi-tab scenario:</strong> On the Dashboard tab, confirm a pending booking → switch to the Calendar tab (do not reload)</td>
+          <td class="expected-col">Calendar tab re-fetches automatically on focus and shows the booking as <strong>Confirmada</strong> (green)</td>
+          <td><div class="btn-group"><button class="btn btn-pass" onclick="setStatus('9.1a','pass')">✅</button><button class="btn btn-fail" onclick="setStatus('9.1a','fail')">❌</button><button class="btn btn-skip" onclick="setStatus('9.1a','skip')">⏭</button></div></td>
+          <td><textarea class="note-input" id="note-9.1a" oninput="saveNote('9.1a')" placeholder="Notes..."></textarea></td>
+        </tr>
+        <tr class="test-row" id="row-9.1b">
+          <td>9.1b <span class="badge-fix">FIX</span></td>
+          <td class="action-col">Same action → switch to the Planning tab (do not reload)</td>
+          <td class="expected-col">Planning tab re-fetches automatically on focus and shows the booking in the confirmed list</td>
+          <td><div class="btn-group"><button class="btn btn-pass" onclick="setStatus('9.1b','pass')">✅</button><button class="btn btn-fail" onclick="setStatus('9.1b','fail')">❌</button><button class="btn btn-skip" onclick="setStatus('9.1b','skip')">⏭</button></div></td>
+          <td><textarea class="note-input" id="note-9.1b" oninput="saveNote('9.1b')" placeholder="Notes..."></textarea></td>
+        </tr>
+        <tr class="test-row" id="row-9.1c">
+          <td>9.1c <span class="badge-reg">REG</span></td>
+          <td class="action-col"><strong>Standard navigation:</strong> Confirm a booking on Dashboard → click "Calendario" link in the nav bar</td>
+          <td class="expected-col">Calendar loads fresh and shows the booking as Confirmada (green)</td>
+          <td><div class="btn-group"><button class="btn btn-pass" onclick="setStatus('9.1c','pass')">✅</button><button class="btn btn-fail" onclick="setStatus('9.1c','fail')">❌</button><button class="btn btn-skip" onclick="setStatus('9.1c','skip')">⏭</button></div></td>
+          <td><textarea class="note-input" id="note-9.1c" oninput="saveNote('9.1c')" placeholder="Notes..."></textarea></td>
+        </tr>
+        <tr class="test-row" id="row-9.2">
+          <td>9.2 <span class="badge-reg">REG</span></td>
+          <td class="action-col">Delete a booking from /calendar</td>
+          <td class="expected-col">Booking disappears from dashboard and planning</td>
+          <td><div class="btn-group"><button class="btn btn-pass" onclick="setStatus('9.2','pass')">✅</button><button class="btn btn-fail" onclick="setStatus('9.2','fail')">❌</button><button class="btn btn-skip" onclick="setStatus('9.2','skip')">⏭</button></div></td>
+          <td><textarea class="note-input" id="note-9.2" oninput="saveNote('9.2')" placeholder="Notes..."></textarea></td>
+        </tr>
+        <tr class="test-row" id="row-9.3">
+          <td>9.3 <span class="badge-reg">REG</span></td>
+          <td class="action-col">Create a blocked slot from /calendar</td>
+          <td class="expected-col">🔒 tile count updates on dashboard after navigating back</td>
+          <td><div class="btn-group"><button class="btn btn-pass" onclick="setStatus('9.3','pass')">✅</button><button class="btn btn-fail" onclick="setStatus('9.3','fail')">❌</button><button class="btn btn-skip" onclick="setStatus('9.3','skip')">⏭</button></div></td>
+          <td><textarea class="note-input" id="note-9.3" oninput="saveNote('9.3')" placeholder="Notes..."></textarea></td>
+        </tr>
+        <tr class="test-row" id="row-9.4">
+          <td>9.4 <span class="badge-reg">REG</span></td>
+          <td class="action-col">Confirm a booking → check /stats</td>
+          <td class="expected-col">KPIs and heatmap reflect the change after navigation</td>
+          <td><div class="btn-group"><button class="btn btn-pass" onclick="setStatus('9.4','pass')">✅</button><button class="btn btn-fail" onclick="setStatus('9.4','fail')">❌</button><button class="btn btn-skip" onclick="setStatus('9.4','skip')">⏭</button></div></td>
+          <td><textarea class="note-input" id="note-9.4" oninput="saveNote('9.4')" placeholder="Notes..."></textarea></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="summary-box">
+  <h2>Summary</h2>
+  <div class="summary-grid">
+    <div class="summary-item"><div class="summary-num summary-pass" id="sum-pass">0</div><div class="summary-label">Pass</div></div>
+    <div class="summary-item"><div class="summary-num summary-fail" id="sum-fail">0</div><div class="summary-label">Fail</div></div>
+    <div class="summary-item"><div class="summary-num summary-skip" id="sum-skip">0</div><div class="summary-label">Skipped</div></div>
+    <div class="summary-item"><div class="summary-num summary-total" id="sum-total">0</div><div class="summary-label">Total</div></div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = "horus-tests-patch-v1.7.1-tiles-sync";
+const TEST_IDS = ["1.1","1.2","1.3","1.4","1.5","9.1a","9.1b","9.1c","9.2","9.3","9.4"];
+const SECTIONS = {
+  dashboard: ["1.1","1.2","1.3","1.4","1.5"],
+  sync: ["9.1a","9.1b","9.1c","9.2","9.3","9.4"],
+};
+
+let results = {};
+let notes = {};
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      results = data.results || {};
+      notes = data.notes || {};
+      const tester = data.tester || "";
+      document.getElementById("tester-name").value = tester;
+    }
+  } catch (e) {}
+  TEST_IDS.forEach(id => {
+    applyStatus(id, results[id] || null);
+    const noteEl = document.getElementById("note-" + id);
+    if (noteEl) noteEl.value = notes[id] || "";
+  });
+  updateAll();
+}
+
+function save() {
+  const data = {
+    version: "1.8-tiles-sync",
+    tester: document.getElementById("tester-name").value,
+    savedAt: new Date().toISOString(),
+    results,
+    notes,
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function saveResults() { save(); showToast("Saved!"); }
+function saveNote(id) { notes[id] = document.getElementById("note-" + id).value; save(); }
+
+function setStatus(id, status) {
+  results[id] = results[id] === status ? null : status;
+  applyStatus(id, results[id]);
+  save();
+  updateAll();
+}
+
+function applyStatus(id, status) {
+  const row = document.getElementById("row-" + id);
+  if (!row) return;
+  row.className = "test-row" + (status ? " status-" + status : "");
+  ["pass","fail","skip"].forEach(s => {
+    const btn = row.querySelector(".btn-" + s);
+    if (btn) btn.className = "btn btn-" + s + (status === s ? " active-" + s : "");
+  });
+}
+
+function updateAll() {
+  let pass = 0, fail = 0, skip = 0;
+  TEST_IDS.forEach(id => {
+    if (results[id] === "pass") pass++;
+    else if (results[id] === "fail") fail++;
+    else if (results[id] === "skip") skip++;
+  });
+  const done = pass + fail + skip;
+  const total = TEST_IDS.length;
+  document.getElementById("sum-pass").textContent = pass;
+  document.getElementById("sum-fail").textContent = fail;
+  document.getElementById("sum-skip").textContent = skip;
+  document.getElementById("sum-total").textContent = total;
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  document.getElementById("progress-fill").style.width = pct + "%";
+  document.getElementById("progress-label").textContent = `Progress: ${done} / ${total} (${pass} pass · ${fail} fail · ${skip} skipped)`;
+  updateSectionStats();
+}
+
+function updateSectionStats() {
+  Object.entries(SECTIONS).forEach(([key, ids]) => {
+    let p = 0, f = 0, s = 0;
+    ids.forEach(id => {
+      if (results[id] === "pass") p++;
+      else if (results[id] === "fail") f++;
+      else if (results[id] === "skip") s++;
+    });
+    const el = document.getElementById("stats-" + key);
+    if (el) el.innerHTML = (p ? `<span class="s-pass">${p} ✅</span>` : "") + (f ? `<span class="s-fail">${f} ❌</span>` : "") + (s ? `<span class="s-skip">${s} ⏭</span>` : "");
+  });
+}
+
+function toggleSection(key) {
+  const body = document.getElementById("body-" + key);
+  if (body) body.classList.toggle("collapsed");
+}
+
+function exportJSON() {
+  const data = {
+    version: "1.8-tiles-sync",
+    tester: document.getElementById("tester-name").value,
+    exportedAt: new Date().toISOString(),
+    results,
+    notes,
+    summary: {
+      pass: TEST_IDS.filter(id => results[id] === "pass").length,
+      fail: TEST_IDS.filter(id => results[id] === "fail").length,
+      skip: TEST_IDS.filter(id => results[id] === "skip").length,
+      total: TEST_IDS.length,
+    }
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const tester = (document.getElementById("tester-name").value || "tester").replace(/\s+/g, "-").toLowerCase();
+  const date = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `horus-patch-v1.7.1-tiles-sync-${tester}-${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      results = data.results || {};
+      notes = data.notes || {};
+      if (data.tester) document.getElementById("tester-name").value = data.tester;
+      TEST_IDS.forEach(id => {
+        applyStatus(id, results[id] || null);
+        const noteEl = document.getElementById("note-" + id);
+        if (noteEl) noteEl.value = notes[id] || "";
+      });
+      updateAll();
+      save();
+      showToast("Imported!");
+    } catch { showToast("Import error"); }
+  };
+  reader.readAsText(file);
+  event.target.value = "";
+}
+
+function resetAll() {
+  if (!confirm("Reset all results? This cannot be undone.")) return;
+  results = {}; notes = {};
+  document.getElementById("tester-name").value = "";
+  TEST_IDS.forEach(id => {
+    applyStatus(id, null);
+    const noteEl = document.getElementById("note-" + id);
+    if (noteEl) noteEl.value = "";
+  });
+  localStorage.removeItem(STORAGE_KEY);
+  updateAll();
+}
+
+function showToast(msg) {
+  const t = document.createElement("div");
+  t.textContent = msg;
+  t.style.cssText = "position:fixed;bottom:1.5rem;right:1.5rem;background:#1e293b;border:1px solid #334155;color:#fbbf24;padding:0.5rem 1rem;border-radius:0.4rem;font-size:0.85rem;z-index:9999;";
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 1800);
+}
+
+document.getElementById("tester-name").addEventListener("input", () => save());
+document.getElementById("today").textContent = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+
+load();
+</script>
+</body>
+</html>

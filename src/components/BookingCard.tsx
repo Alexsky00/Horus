@@ -28,6 +28,7 @@ export type Booking = {
   phone: string | null;
   notes: string | null;
   externalRef: string | null;
+  price: number | null;
 };
 
 const ROUTE_LABELS: Record<string, string> = {
@@ -77,6 +78,7 @@ export default function BookingCard({
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
 
   const date = new Date(booking.date);
+  const isPast = date < new Date();
   const dateStr = date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
   const timeStr = date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
 
@@ -145,7 +147,7 @@ export default function BookingCard({
       </p>
       {booking.notes && <p className="text-slate-500 text-xs mt-1 italic">{booking.notes}</p>}
 
-      {(booking.status === "pending" || booking.status === "conflict") && (
+      {(booking.status === "pending" || booking.status === "conflict") && !isPast && (
         <div className="flex gap-2 mt-3">
           {booking.status === "conflict" && (
             <p className="w-full text-xs text-purple-400 mb-1">⚡ Conflicto de horario detectado — revisar antes de aceptar</p>

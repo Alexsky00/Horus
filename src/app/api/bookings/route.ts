@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { sendPushToAll, sendEmailFallback } from "@/lib/push";
 import { writeLog } from "@/lib/log";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/bookings?status=pending&from=2024-01-01&to=2024-12-31
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -25,13 +27,15 @@ export async function GET(req: NextRequest) {
     orderBy: { date: "asc" },
   });
 
-  return NextResponse.json(bookings);
+  return NextResponse.json(bookings, {
+    headers: { "Cache-Control": "no-store" },
+  });
 }
 
 // POST /api/bookings — crée une nouvelle réservation (depuis simulation OTA ou formulaire)
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { source, guestName, guestEmail, phone, tourName, date, participants, duration, nationality, routeType, allDay, notes, externalRef } = body;
+  const { source, guestName, guestEmail, phone, tourName, date, participants, duration, nationality, routeType, allDay, notes, externalRef, price } = body;
 
   if (!source || !guestName || !guestEmail || !tourName || !date || !participants) {
     return NextResponse.json({ error: "Faltan campos obligatorios (source, guestName, guestEmail, tourName, date, participants)" }, { status: 400 });
@@ -96,6 +100,7 @@ export async function POST(req: NextRequest) {
       phone: phone ?? null,
       notes: notes ?? null,
       externalRef: externalRef ?? null,
+      price: price != null ? Number(price) : null,
       status: conflict ? "conflict" : "pending",
     },
   });

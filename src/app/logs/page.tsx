@@ -44,7 +44,7 @@ export default function LogsPage() {
   }
 
   async function seedDemo() {
-    if (!confirm("¿Generar datos de demo para el próximo mes? Se añadirán 27 reservas de ejemplo.")) return;
+    if (!confirm("¿Generar datos de demo? Se añadirán ~80 reservas históricas (13 meses) + 21 futuras + 35 bloqueados.")) return;
     setSeeding(true);
     setSeedError(null);
     try {
@@ -136,7 +136,7 @@ export default function LogsPage() {
       {/* Demo */}
       <div className="border border-amber-800/50 rounded-lg p-4 bg-amber-950/20">
         <p className="text-amber-400 font-semibold text-sm mb-1">Demo</p>
-        <p className="text-slate-400 text-xs mb-3">Genera 27 reservas de ejemplo sobre el próximo mes, cubriendo todas las opciones de la aplicación.</p>
+        <p className="text-slate-400 text-xs mb-3">Genera ~80 reservas históricas (últimos 13 meses) + 21 futuras + 35 bloqueados, cubriendo todas las opciones de la aplicación.</p>
         <button onClick={seedDemo} disabled={seeding}
           className="text-xs px-3 py-1.5 rounded border border-amber-600 bg-amber-900/30 text-amber-300 hover:bg-amber-900/60 disabled:opacity-30 transition-colors font-semibold">
           {seeding ? "Generando..." : "✦ Cargar datos de demo"}

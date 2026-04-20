@@ -142,6 +142,18 @@ export default function CalendarPage() {
 
   useEffect(() => { fetchBookings(); fetchBlocked(); }, []);
 
+  // Re-fetch when the tab becomes visible again (multi-tab scenario)
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        fetchBookings();
+        fetchBlocked();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   async function submitBlock(e: React.FormEvent) {
     e.preventDefault();
     setBlockLoading(true);
@@ -193,6 +205,7 @@ export default function CalendarPage() {
 
   const st = selected ? (STATUS_STYLES[selected.status] ?? { label: selected.status, cls: "bg-slate-500/20 text-slate-400", border: "border-slate-500" }) : null;
   const date = selected ? new Date(selected.date) : null;
+  const isPast = date ? date < new Date() : false;
   const dateStr = date?.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const timeStr = date?.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
 
@@ -499,7 +512,7 @@ export default function CalendarPage() {
             )}
 
             {/* Actions */}
-            {(selected.status === "pending" || selected.status === "conflict") && (
+            {(selected.status === "pending" || selected.status === "conflict") && !isPast && (
               <div className="flex gap-2">
                 <button
                   onClick={() => handleAction(selected.id, "confirmed")}

@@ -3,6 +3,30 @@ import { useState } from "react";
 
 const RELEASE_NOTES: { version: string; date: string; status: string; sections: { title: string; items: string[] }[] }[] = [
   {
+    version: "v1.7.2",
+    date: "2026-04-20",
+    status: "Stable",
+    sections: [
+      {
+        title: "Nuevas funcionalidades",
+        items: [
+          "Estadísticas — heatmap anual con 12 mini-calendarios independientes, escala dinámica (mauve → naranja → amarillo → verde)",
+          "Estadísticas — filtro «Año completo» y filtro mensual; clic en barra del gráfico para cambiar de mes",
+          "Admin — tarifas pre-rellenadas al cargar la página (campos desactivados hasta confirmar la carga)",
+          "Formulario — tipo de ruta auto-rellena el precio con la tarifa configurada en Admin",
+        ],
+      },
+      {
+        title: "Correcciones",
+        items: [
+          "Reservas pasadas — botones Aceptar/Rechazar ocultos para reservas pendientes del pasado",
+          "Sincronización entre páginas — las pestañas Calendario y Planning se actualizan automáticamente al recuperar el foco",
+          "Caché API — todas las rutas GET devuelven Cache-Control: no-store para evitar datos obsoletos",
+        ],
+      },
+    ],
+  },
+  {
     version: "v1.6",
     date: "2026-04-19",
     status: "Stable",
@@ -158,7 +182,7 @@ export default function VersionFooter() {
           onClick={() => setOpen(true)}
           className="text-slate-600 text-xs hover:text-slate-400 transition-colors cursor-pointer"
         >
-          Horus v1.6
+          Horus v1.7.2
         </button>
       </footer>
 

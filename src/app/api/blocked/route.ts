@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const slots = await prisma.blockedSlot.findMany({ orderBy: { date: "asc" } });
-  return NextResponse.json(slots);
+  return NextResponse.json(slots, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function DELETE() {

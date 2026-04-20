@@ -2,6 +2,23 @@
 
 ---
 
+## v1.7.2
+_Release date: 2026-04-20_
+_Status: Stable_
+
+### New features
+- **Statistics page** — new `/stats` page with annual activity heatmap (12 independent mini-calendars, dynamic color scale: purple → orange → yellow → green) and "Año completo" / monthly filter mode
+- **Stats bar chart** — bars switch between full-year and month highlight; click a bar to switch month filter; tooltip with confirmed / pending / refused / conflict counts
+- **Admin — tariff pre-fill** — tariff fields are pre-filled with saved values on load (fields disabled until fetch completes to avoid empty flicker)
+- **Route tariff auto-fill** — selecting a route type in the booking form auto-fills the price field with the tariff configured in Admin
+
+### Bug fixes
+- **Past bookings locked** — Accept / Refuse buttons hidden for past pending or conflict bookings (cannot confirm a tour that already happened)
+- **API cache** — all GET API routes now return `Cache-Control: no-store` and are marked `force-dynamic`, preventing stale data after actions
+- **Multi-tab sync** — Calendar and Planning tabs auto-refresh data when they regain focus (visibilitychange event), no manual reload needed
+
+---
+
 ## v1.6
 _Release date: 2026-04-19_
 _Status: Stable_

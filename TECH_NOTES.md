@@ -2,6 +2,46 @@
 
 ---
 
+## v1.7.2
+_Date: 2026-04-20_
+
+### Changes from v1.6
+
+**Stats page** (`src/app/stats/page.tsx`)
+New page. `filterMonth` state: `-1` = "Año completo" (full year), `0–11` = specific month (0-indexed). `prev()`/`next()` navigate by year in year mode, by month (with year wrap) in month mode. Fetch URL: `&filterMonth=${month + 1}` when month selected, omitted for full year.
+
+Bar chart: `isSelected = filterMonth >= 0 && idx === filterMonth`. Clicking a bar sets `filterMonth`. Bars at 40% opacity when not selected in month mode.
+
+**Annual heatmap**
+`buildMonthGrid(year, month, countMap): DayCell[][]` — builds each month as an independent 7-column grid. Padding `null` cells before day 1 (Mon-aligned) and trailing nulls to fill last row. No cross-month contamination (replaced previous GitHub-style weekly column approach).
+
+`heatColor(count, max)` — dynamic scale relative to `maxPerDay` across the year:
+- `= 0` → `bg-slate-700/40`
+- `≤ 25%` → `bg-violet-700/60`
+- `≤ 50%` → `bg-orange-600/65`
+- `≤ 75%` → `bg-amber-400/70`
+- `> 75%` → `bg-green-500/80`
+
+Grid layout: `grid grid-cols-3 sm:grid-cols-4 gap-2`, cells `aspect-square rounded-sm`, inner `grid grid-cols-7 gap-px`.
+
+**Stats API** (`src/app/api/stats/route.ts`)
+`filterMonth=0` → full year KPIs (jan–dec). `filterMonth=1–12` → specific month. Added `byDay` array (per-day counts for heatmap). Added `export const dynamic = "force-dynamic"`.
+
+**Admin — tariff pre-fill** (`src/app/admin/page.tsx`)
+`settingsLoaded: boolean` state, initially `false`. Fetch callback: `.then(data => { setSettings(data); setSettingsLoaded(true); })`. Tariff inputs: `disabled={!settingsLoaded}`, `placeholder={settingsLoaded ? "ej: 120" : "…"}`, `className="...disabled:opacity-50"`.
+
+**API cache fix** — all GET route handlers
+Added `export const dynamic = "force-dynamic"` and `Cache-Control: no-store` response header to: `bookings/route.ts`, `blocked/route.ts`, `stats/route.ts`, `settings/route.ts`. Prevents Next.js route handler cache and browser HTTP cache from serving stale data after PATCH actions.
+
+**Multi-tab auto-refresh**
+`calendar/page.tsx` and `planning/page.tsx`: added `useEffect` that registers a `visibilitychange` event listener. On `document.visibilityState === "visible"`, re-fetches all data. Listener cleaned up on unmount. Fixes the scenario where a user confirms a booking in one tab and switches to calendar/planning tabs without navigating.
+
+**Past bookings locked**
+`BookingCard.tsx`: `isPast = new Date(booking.date) < new Date()`. Aceptar / Rechazar buttons only rendered when `(status === "pending" || status === "conflict") && !isPast`.
+`calendar/page.tsx`: same check on `date` (derived from `selected.date`). Buttons hidden for past events in the side panel.
+
+---
+
 ## v1.6
 _Date: 2026-04-19_
 
@@ -40,6 +80,70 @@ Client component mounted in `layout.tsx` (alongside `ThemeLoader`). Renders a fi
 - `2000ms` : component unmounts, `sessionStorage.setItem("horus-splash-done", "1")`
 
 `sessionStorage` flag prevents the splash from replaying on in-app navigation. Replays only on new tab/session (intended for PWA cold start).
+
+**Workflow d'implémentation et de versioning**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     DÉVELOPPEMENT                               │
+│              (features, bugs, améliorations)                    │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │
+                          ▼
+              ┌───────────────────────┐
+              │  "version prête       │
+              │   à tester"           │
+              └───────────┬───────────┘
+                          │
+                          ▼
+              ┌───────────────────────┐
+              │  • Incrémenter vX.Y   │
+              │    (non livrée)       │
+              │  • MAJ suite de tests │
+              └───────────┬───────────┘
+                          │
+                          ▼
+              ┌───────────────────────┐
+              │   Tests manuels       │  ◄── utilisateur
+              └───────────┬───────────┘
+                          │
+              ┌───────────┴───────────┐
+              │                       │
+           ✅ OK                   ❌ NOK
+              │                       │
+              ▼                       ▼
+  ┌───────────────────┐   ┌───────────────────────┐
+  │  "version stable" │   │  Correction des bugs  │
+  └─────────┬─────────┘   └───────────┬───────────┘
+            │                         │
+            ▼                         ▼
+  ┌───────────────────┐   ┌───────────────────────┐
+  │ MAJ 6 fichiers :  │   │ • Incrémenter vX.Y    │
+  │ • RELEASE_NOTES   │   │   (patch)             │
+  │ • TECH_NOTES      │   │ • TESTS_PATCH_        │
+  │ • README          │   │   v{ver}-{sujet}.txt  │
+  │ • VersionFooter   │   └───────────┬───────────┘
+  │ • package.json    │               │
+  │ • BACKLOG         │               ▼
+  └───────────────────┘   ┌───────────────────────┐
+                          │   Tests patch manuels │  ◄── utilisateur
+                          └───────────┬───────────┘
+                                      │
+                          ┌───────────┴───────────┐
+                          │                       │
+                       ✅ OK                   ❌ NOK
+                          │                       │
+                          ▼                       │
+              ┌───────────────────┐               │
+              │  "version stable" │       ┌───────┘
+              └───────────────────┘       │ (nouveau cycle patch)
+                                          └──────────────────────►
+```
+
+**Règles :**
+- Jamais de "version stable" sans validation manuelle
+- Jamais de patch sans `TESTS_PATCH_` ciblé sur les NOK
+- Le numéro de version est incrémenté avant les tests, pas après
 
 ---
 
