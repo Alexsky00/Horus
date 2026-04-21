@@ -41,12 +41,15 @@ const DURATIONS = [
   { value: "360", label: "6h" },
 ];
 
+type TourOption = { id: string; name: string; duration: number; price: number; pricingMode: string; routeType: string; platforms: string; };
+
 export default function CalendarPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [blocked, setBlocked] = useState<BlockedSlot[]>([]);
   const [selected, setSelected] = useState<Booking | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [allTours, setAllTours] = useState<TourOption[]>([]);
 
   // I5 — date courante du calendrier (pour pré-remplir le formulaire blocage)
   const [calendarDate, setCalendarDate] = useState(new Date());
@@ -60,13 +63,54 @@ export default function CalendarPage() {
   // Formulaire nouvelle réservation
   const [showBooking, setShowBooking] = useState(false);
   const [bookingForm, setBookingForm] = useState({
-    source: "manual", guestName: "", guestEmail: "", phone: "",
-    tourName: "Bardenas Reales", date: "", time: "09:00",
+    source: "manual", tourId: "", guestName: "", guestEmail: "", phone: "",
+    tourName: "", date: "", time: "09:00",
     participants: "2", duration: "120", allDay: false,
-    nationality: "", routeType: "", notes: "",
+    nationality: "", routeType: "", notes: "", price: "",
   });
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
+
+  const calPlatformTours = allTours.filter((t) => {
+    const platforms: string[] = JSON.parse(t.platforms);
+    return platforms.includes(bookingForm.source);
+  });
+  const calSelectedTour = allTours.find(t => t.id === bookingForm.tourId) ?? null;
+  const calIsPerPerson = calSelectedTour?.pricingMode === "person";
+  const calPerPersonPrice = calSelectedTour?.price ?? 0;
+  const calComputedTotal = calIsPerPerson ? calPerPersonPrice * Number(bookingForm.participants || 1) : null;
+
+  function calApplyTour(tourId: string) {
+    if (tourId === "__manual__") {
+      setBookingForm(f => ({ ...f, tourId: "__manual__", tourName: "", duration: "120", routeType: "", price: "" }));
+      return;
+    }
+    if (!tourId) {
+      setBookingForm(f => ({ ...f, tourId: "", tourName: "", duration: "120", routeType: "", price: "" }));
+      return;
+    }
+    const tour = allTours.find(t => t.id === tourId);
+    if (!tour) return;
+    const totalPrice = tour.pricingMode === "person"
+      ? String(tour.price * Number(bookingForm.participants || 1))
+      : String(tour.price);
+    setBookingForm(f => ({
+      ...f, tourId: tour.id, tourName: tour.name,
+      duration: String(tour.duration), routeType: tour.routeType, price: totalPrice,
+    }));
+  }
+
+  function calHandleSourceChange(source: string) {
+    setBookingForm(f => ({ ...f, source, tourId: "", tourName: "", duration: "120", routeType: "", price: "" }));
+  }
+
+  function calHandleParticipants(val: string) {
+    if (calIsPerPerson) {
+      setBookingForm(f => ({ ...f, participants: val, price: String(calPerPersonPrice * Number(val || 1)) }));
+    } else {
+      setBookingForm(f => ({ ...f, participants: val }));
+    }
+  }
 
   function handleDateClick(date: Date) {
     const y = date.getFullYear();
@@ -95,6 +139,7 @@ export default function CalendarPage() {
         guestEmail: bookingForm.guestEmail,
         phone: bookingForm.phone || null,
         tourName: bookingForm.tourName,
+        tourId: (bookingForm.tourId && bookingForm.tourId !== "__manual__") ? bookingForm.tourId : null,
         date: dateStr,
         participants: Number(bookingForm.participants),
         duration: bookingForm.allDay ? null : Number(bookingForm.duration),
@@ -102,6 +147,7 @@ export default function CalendarPage() {
         nationality: bookingForm.nationality || null,
         routeType: bookingForm.routeType || null,
         notes: bookingForm.notes || null,
+        price: bookingForm.price ? Number(bookingForm.price) : null,
       }),
     });
     setBookingLoading(false);
@@ -140,7 +186,11 @@ export default function CalendarPage() {
     fetch("/api/blocked").then((r) => r.json()).then(setBlocked);
   }
 
-  useEffect(() => { fetchBookings(); fetchBlocked(); }, []);
+  useEffect(() => {
+    fetchBookings();
+    fetchBlocked();
+    fetch("/api/tours").then(r => r.json()).then(setAllTours);
+  }, []);
 
   // Re-fetch when the tab becomes visible again (multi-tab scenario)
   useEffect(() => {
@@ -237,7 +287,7 @@ export default function CalendarPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-slate-400 block mb-1">Plataforma</label>
-              <select value={bookingForm.source} onChange={(e) => setBookingForm({ ...bookingForm, source: e.target.value })}
+              <select value={bookingForm.source} onChange={(e) => calHandleSourceChange(e.target.value)}
                 className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
                 {["viator","getyourguide","civitatis","wordpress","manual"].map((s) => (
                   <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
@@ -246,8 +296,27 @@ export default function CalendarPage() {
             </div>
             <div>
               <label className="text-xs text-slate-400 block mb-1">Tour</label>
-              <input value={bookingForm.tourName} onChange={(e) => setBookingForm({ ...bookingForm, tourName: e.target.value })}
-                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" required />
+              {calPlatformTours.length > 0 ? (
+                <select value={bookingForm.tourId} onChange={(e) => calApplyTour(e.target.value)}
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
+                  <option value="">— Seleccionar tour</option>
+                  {calPlatformTours.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} {t.pricingMode === "person" ? `(${t.price}€/pers.)` : `(${t.price}€)`}
+                    </option>
+                  ))}
+                  <option value="__manual__">Otro (libre)</option>
+                </select>
+              ) : (
+                <input value={bookingForm.tourName} onChange={(e) => setBookingForm(f => ({ ...f, tourName: e.target.value }))}
+                  placeholder="Nombre del tour"
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" required />
+              )}
+              {bookingForm.tourId === "__manual__" && (
+                <input value={bookingForm.tourName} onChange={(e) => setBookingForm(f => ({ ...f, tourName: e.target.value }))}
+                  placeholder="Nombre del tour"
+                  className="w-full mt-1 bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
+              )}
             </div>
             <div>
               <label className="text-xs text-slate-400 block mb-1">Nombre</label>
@@ -267,7 +336,7 @@ export default function CalendarPage() {
             </div>
             <div>
               <label className="text-xs text-slate-400 block mb-1">Participantes</label>
-              <input type="number" min="1" value={bookingForm.participants} onChange={(e) => setBookingForm({ ...bookingForm, participants: e.target.value })}
+              <input type="number" min="1" value={bookingForm.participants} onChange={(e) => calHandleParticipants(e.target.value)}
                 className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" required />
             </div>
             <div>
@@ -299,7 +368,8 @@ export default function CalendarPage() {
               <div>
                 <label className="text-xs text-slate-400 block mb-1">Duración</label>
                 <select value={bookingForm.duration} onChange={(e) => setBookingForm({ ...bookingForm, duration: e.target.value })}
-                  className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white"
+                  disabled={!!calSelectedTour}>
                   {DURATIONS.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </div>
@@ -307,12 +377,28 @@ export default function CalendarPage() {
             <div>
               <label className="text-xs text-slate-400 block mb-1">Tipo ruta</label>
               <select value={bookingForm.routeType} onChange={(e) => setBookingForm({ ...bookingForm, routeType: e.target.value })}
-                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white"
+                disabled={!!calSelectedTour}>
                 <option value="">— Sin tipo —</option>
                 <option value="corta">🟢 Corta</option>
                 <option value="media">🟡 Media</option>
                 <option value="larga">🔴 Larga</option>
               </select>
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Precio (€) <span className="text-slate-600">opcional</span></label>
+              <div className="relative">
+                <input type="number" min="0" step="0.01" value={bookingForm.price}
+                  onChange={(e) => setBookingForm(f => ({ ...f, price: e.target.value }))}
+                  placeholder="Ej: 250"
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white pr-7 placeholder-slate-500" />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs">€</span>
+              </div>
+              {calIsPerPerson && calComputedTotal !== null && (
+                <p className="text-xs text-amber-400 mt-1">
+                  {calPerPersonPrice}€ × {bookingForm.participants} pers. = {calComputedTotal}€
+                </p>
+              )}
             </div>
             <div className="col-span-2">
               <label className="text-xs text-slate-400 block mb-1">Notas (opcional)</label>
@@ -487,6 +573,12 @@ export default function CalendarPage() {
                 <span className="text-slate-500 w-24 flex-shrink-0">Participantes</span>
                 <span className="text-slate-200">{selected.participants} pers.</span>
               </div>
+              {selected.price != null && (
+                <div className="flex gap-2">
+                  <span className="text-slate-500 w-24 flex-shrink-0">Precio</span>
+                  <span className="text-green-400 font-medium">{selected.price} €</span>
+                </div>
+              )}
               {selected.routeType && (
                 <div className="flex gap-2">
                   <span className="text-slate-500 w-24 flex-shrink-0">Tipo ruta</span>

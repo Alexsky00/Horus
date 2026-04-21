@@ -87,15 +87,16 @@ export async function GET(req: NextRequest) {
     .sort((a, b) => b.total - a.total);
 
   // ── Top tours ────────────────────────────────────────────────────
-  const tourMap: Record<string, { count: number; participants: number; revenue: number }> = {};
+  const tourMap: Record<string, { count: number; participants: number; revenue: number; sources: Set<string> }> = {};
   for (const b of confirmed) {
-    if (!tourMap[b.tourName]) tourMap[b.tourName] = { count: 0, participants: 0, revenue: 0 };
+    if (!tourMap[b.tourName]) tourMap[b.tourName] = { count: 0, participants: 0, revenue: 0, sources: new Set() };
     tourMap[b.tourName].count++;
     tourMap[b.tourName].participants += b.participants;
     tourMap[b.tourName].revenue     += b.price ?? 0;
+    tourMap[b.tourName].sources.add(b.source);
   }
   const topTours = Object.entries(tourMap)
-    .map(([name, v]) => ({ name, ...v }))
+    .map(([name, v]) => ({ name, count: v.count, participants: v.participants, revenue: v.revenue, sources: Array.from(v.sources) }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 

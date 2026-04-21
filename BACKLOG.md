@@ -1,5 +1,5 @@
 # Horus — Backlog
-_Dernière mise à jour : 2026-04-20_
+_Dernière mise à jour : 2026-04-21_
 
 ---
 
@@ -140,4 +140,6 @@ Chaque endpoint doit valider une clé secrète (header `X-Webhook-Secret` ou HMA
 | **v1.5 stable** (2026-04-18) | flash thème | 6 palettes de couleurs depuis Admin | — |
 | **v1.6 stable** (2026-04-19) | B1–B5 + traductions FR→ES | Conflit violet, splash screen, panel calendrier conflit | — |
 | **v1.7.2 stable** (2026-04-20) | Caché API, boutons passé, sync onglets | Stats heatmap + filtres, Admin tarifas pre-fill | — |
+| **v1.8 stable** (2026-04-20) | — | Catálogo tours, select tour par plateforme, prix BookingCard/calendrier, badges stats, seed réel | — |
+| **v1.8.1 stable** (2026-04-21) | Tours inactifs dans formulaire, confirm suppression | Date + badge jour dashboard, édition inline catalogue, catégorie libre, heatmap bleu | — |
 | **Total** | **22** | **16** | **4** |

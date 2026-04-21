@@ -5,22 +5,24 @@ import { prisma } from "@/lib/db";
 export async function POST() {
   const now = new Date();
 
-  // ── Données de référence ───────────────────────────────────────────
-  const TOURS: { name: string; routeType: string | null; basePrice: number; durationMin: number | null; allDay: boolean }[] = [
-    { name: "Bardenas Reales",       routeType: "corta",  basePrice: 180, durationMin: 120,  allDay: false },
-    { name: "Bardenas Reales",       routeType: "media",  basePrice: 280, durationMin: 240,  allDay: false },
-    { name: "Camino del Ebro",       routeType: "media",  basePrice: 240, durationMin: 180,  allDay: false },
-    { name: "Sierra de Urbasa",      routeType: "larga",  basePrice: 500, durationMin: null, allDay: true  },
-    { name: "Monasterio de Leyre",   routeType: "corta",  basePrice: 160, durationMin: 90,   allDay: false },
-    { name: "Ruta del Vino Navarra", routeType: "media",  basePrice: 300, durationMin: 240,  allDay: false },
-    { name: "Ruta del Vino Navarra", routeType: "larga",  basePrice: 420, durationMin: 360,  allDay: false },
-    { name: "Noche en Bardenas",     routeType: "larga",  basePrice: 400, durationMin: 480,  allDay: false },
-    { name: "Bardenas Express",      routeType: "corta",  basePrice: 140, durationMin: 60,   allDay: false },
-    { name: "Complejo Bardenas",     routeType: null,     basePrice: 320, durationMin: null, allDay: true  },
-  ];
+  // ── Catalogue réel ─────────────────────────────────────────────────
+  const catalogTours = await prisma.tour.findMany({ orderBy: { sortOrder: "asc" } });
+  if (catalogTours.length === 0) {
+    return NextResponse.json(
+      { error: "El catálogo de tours está vacío. Ve a Admin → Catálogo de tours → «Inicializar catálogo» primero." },
+      { status: 409 }
+    );
+  }
 
-  const SOURCES = ["viator", "viator", "getyourguide", "getyourguide", "civitatis", "wordpress", "manual"];
+  // Helpers: tours filtrés par plateforme
+  function toursFor(source: string) {
+    return catalogTours.filter((t) => (JSON.parse(t.platforms) as string[]).includes(source));
+  }
+  function tourByName(name: string) {
+    return catalogTours.find((t) => t.name === name) ?? null;
+  }
 
+  // ── Invités ────────────────────────────────────────────────────────
   const GUESTS = [
     { name: "Sophie Martin",    email: "sophie@mail.fr",    phone: "+33 6 12 34 56 78", nat: "FR" },
     { name: "Hans Müller",      email: "hans@mail.de",      phone: "+49 151 23456789",  nat: "DE" },
@@ -60,8 +62,8 @@ export async function POST() {
     { name: "Lucie Moreau",     email: "lucie@mail.fr",     phone: "+33 6 34 56 78 90", nat: "FR" },
   ];
 
+  const SOURCES = ["viator", "viator", "getyourguide", "getyourguide", "civitatis", "wordpress", "manual"];
   const HOURS = [8, 9, 9, 10, 10, 11, 14, 15];
-  // Status weights: 60% confirmed, 15% pending, 15% refused, 10% conflict
   const STATUS_POOL = [
     "confirmed","confirmed","confirmed","confirmed","confirmed","confirmed",
     "pending","pending","pending",
@@ -69,16 +71,14 @@ export async function POST() {
     "conflict","conflict",
   ];
 
-  // Déterministe simple (pas de Math.random pour reproductibilité)
-  function pick<T>(arr: T[], seed: number): T {
-    return arr[Math.abs(seed) % arr.length];
-  }
+  function pick<T>(arr: T[], seed: number): T { return arr[Math.abs(seed) % arr.length]; }
 
   type BookingInput = {
     source: string; guestName: string; guestEmail: string; phone: string | null;
-    tourName: string; date: Date; participants: number; duration: number | null;
-    nationality: string; routeType: string | null; allDay: boolean;
-    status: string; externalRef: string | null; notes: string | null; price: number;
+    tourName: string; tourId: string | null; date: Date; participants: number;
+    duration: number | null; nationality: string; routeType: string | null;
+    allDay: boolean; status: string; externalRef: string | null;
+    notes: string | null; price: number;
   };
 
   const bookings: BookingInput[] = [];
@@ -86,44 +86,49 @@ export async function POST() {
   // ── Données historiques : 13 mois en arrière jusqu'à hier ─────────
   for (let m = 13; m >= 1; m--) {
     const year  = now.getFullYear() + Math.floor((now.getMonth() - m) / 12);
-    const month = ((now.getMonth() - m) % 12 + 12) % 12; // 0-indexed
-
-    // Densité saisonnière : plus de réservations en été/printemps
-    const monthNum = month + 1; // 1-12
+    const month = ((now.getMonth() - m) % 12 + 12) % 12;
     const density = [3, 3, 4, 5, 6, 7, 8, 8, 6, 5, 3, 3][month];
 
     for (let i = 0; i < density; i++) {
-      const day  = 1 + (i * 4 + m * 3) % 27; // jours répartis sur le mois
+      const day  = 1 + (i * 4 + m * 3) % 27;
       const seed = m * 100 + i;
 
       const guest  = pick(GUESTS, seed + 7);
-      const tour   = pick(TOURS, seed + 3);
       const source = pick(SOURCES, seed + 11);
       const hour   = pick(HOURS, seed + 5);
-      const parts  = 1 + ((seed * 3) % 8); // 1 à 8 participants
+      const parts  = 1 + ((seed * 3) % 8);
       const status = pick(STATUS_POOL, seed + 13);
 
       const date = new Date(year, month, day, hour, 0, 0, 0);
-      // Ne pas dépasser hier
       if (date >= new Date(now.getFullYear(), now.getMonth(), now.getDate())) continue;
 
-      const price = Math.round(tour.basePrice * (0.8 + (seed % 5) * 0.1) * Math.max(1, parts * 0.4));
+      // Choisir un tour réel pour cette source
+      const sourceTours = toursFor(source);
+      if (sourceTours.length === 0) continue;
+      const tour = pick(sourceTours, seed + 3);
+
+      // Prix : per-person → ×participants, group → prix fixe avec légère variation
+      const priceVariation = 0.9 + (seed % 3) * 0.1; // 0.9, 1.0, 1.1
+      const price = tour.pricingMode === "person"
+        ? Math.round(tour.price * parts)
+        : Math.round(tour.price * priceVariation);
 
       bookings.push({
         source,
-        guestName:   guest.name,
-        guestEmail:  guest.email,
-        phone:       guest.phone,
-        tourName:    tour.name,
+        guestName:    guest.name,
+        guestEmail:   guest.email,
+        phone:        guest.phone,
+        tourName:     tour.name,
+        tourId:       tour.id,
         date,
         participants: parts,
-        duration:    tour.durationMin,
-        nationality: guest.nat,
-        routeType:   tour.routeType,
-        allDay:      tour.allDay,
+        duration:     tour.duration,
+        nationality:  guest.nat,
+        routeType:    tour.routeType,
+        allDay:       false,
         status,
-        externalRef: status !== "manual" ? `${source.slice(0,3).toUpperCase()}-${String(seed).padStart(3,"0")}` : null,
-        notes:       null,
+        externalRef:  source !== "manual" ? `${source.slice(0,3).toUpperCase()}-${String(seed).padStart(3,"0")}` : null,
+        notes:        null,
         price,
       });
     }
@@ -138,32 +143,64 @@ export async function POST() {
     return dt;
   }
 
-  const futureBookings: BookingInput[] = [
-    { source: "viator",      tourName: "Bardenas Reales",       guestName: "Sophie Martin",   guestEmail: "sophie@mail.fr",    phone: "+33 6 12 34 56 78", date: d(2,9),   participants: 3,  duration: 120,  nationality: "FR", routeType: "corta",  allDay: false, status: "confirmed", externalRef: "VIA-F01", notes: null,                                    price: 220 },
-    { source: "getyourguide",tourName: "Camino del Ebro",        guestName: "Hans Müller",     guestEmail: "hans@mail.de",      phone: "+49 151 23456789",  date: d(3,10),  participants: 5,  duration: 180,  nationality: "DE", routeType: "media",  allDay: false, status: "pending",   externalRef: "GYG-F02", notes: "Grupo con niños",                      price: 320 },
-    { source: "civitatis",   tourName: "Sierra de Urbasa",       guestName: "Carlos López",    guestEmail: "carlos@mail.es",    phone: "+34 612 345 678",   date: d(4,8),   participants: 8,  duration: null, nationality: "ES", routeType: "larga",  allDay: true,  status: "confirmed", externalRef: "CIV-F03", notes: "Llevar comida",                        price: 520 },
-    { source: "manual",      tourName: "Monasterio de Leyre",    guestName: "James Smith",     guestEmail: "james@mail.uk",     phone: "+44 7700 900123",   date: d(5,14),  participants: 2,  duration: 90,   nationality: "GB", routeType: null,     allDay: false, status: "refused",   externalRef: null,      notes: "Conflicto de horario",                 price: 180 },
-    { source: "wordpress",   tourName: "Bardenas Reales",        guestName: "Maria Rossi",     guestEmail: "maria@mail.it",     phone: "+39 347 123 4567",  date: d(6,9,30),participants: 4,  duration: 120,  nationality: "IT", routeType: "corta",  allDay: false, status: "confirmed", externalRef: null,      notes: null,                                    price: 240 },
-    { source: "viator",      tourName: "Ruta del Vino Navarra",  guestName: "Emma Johnson",    guestEmail: "emma@mail.us",      phone: "+1 415 555 0123",   date: d(8,11),  participants: 6,  duration: 240,  nationality: "US", routeType: "media",  allDay: false, status: "confirmed", externalRef: "VIA-F08", notes: null,                                    price: 380 },
-    { source: "getyourguide",tourName: "Bardenas Reales",        guestName: "Pieter van Dam",  guestEmail: "pieter@mail.nl",    phone: null,                date: d(8,15),  participants: 2,  duration: 60,   nationality: "NL", routeType: "corta",  allDay: false, status: "pending",   externalRef: "GYG-F08", notes: null,                                    price: 160 },
-    { source: "civitatis",   tourName: "Sierra de Urbasa",       guestName: "João Silva",      guestEmail: "joao@mail.pt",      phone: "+351 912 345 678",  date: d(10,8),  participants: 10, duration: null, nationality: "PT", routeType: "larga",  allDay: true,  status: "confirmed", externalRef: "CIV-F10", notes: null,                                    price: 600 },
-    { source: "manual",      tourName: "Camino del Ebro",        guestName: "Lucas Oliveira",  guestEmail: "lucas@mail.br",     phone: "+55 11 91234 5678", date: d(11,10), participants: 3,  duration: 180,  nationality: "BR", routeType: "media",  allDay: false, status: "confirmed", externalRef: null,      notes: null,                                    price: 240 },
-    { source: "viator",      tourName: "Bardenas Reales",        guestName: "Antoine Dubois",  guestEmail: "antoine@mail.fr",   phone: "+33 7 98 76 54 32", date: d(13,9),  participants: 4,  duration: 120,  nationality: "FR", routeType: null,     allDay: false, status: "pending",   externalRef: "VIA-F13", notes: null,                                    price: 260 },
-    { source: "getyourguide",tourName: "Monasterio de Leyre",    guestName: "Valentina Cruz",  guestEmail: "valentina@mail.ar", phone: "+54 9 11 2345 6789",date: d(15,9),  participants: 2,  duration: 120,  nationality: "AR", routeType: "corta",  allDay: false, status: "confirmed", externalRef: "GYG-F15", notes: null,                                    price: 160 },
-    { source: "civitatis",   tourName: "Sierra de Urbasa",       guestName: "Diego Ramírez",   guestEmail: "diego@mail.mx",     phone: "+52 1 55 1234 5678",date: d(16,10), participants: 5,  duration: 210,  nationality: "MX", routeType: "media",  allDay: false, status: "confirmed", externalRef: "CIV-F16", notes: "Grupo familiar",                       price: 320 },
-    { source: "viator",      tourName: "Camino del Ebro",        guestName: "Liam Tremblay",   guestEmail: "liam@mail.ca",      phone: "+1 514 555 0198",   date: d(19,9),  participants: 3,  duration: 120,  nationality: "CA", routeType: "corta",  allDay: false, status: "confirmed", externalRef: "VIA-F19", notes: null,                                    price: 210 },
-    { source: "wordpress",   tourName: "Bardenas Reales",        guestName: "Isabel García",   guestEmail: "isabel@mail.es",    phone: "+34 698 765 432",   date: d(20,11), participants: 6,  duration: 180,  nationality: "ES", routeType: "media",  allDay: false, status: "confirmed", externalRef: null,      notes: null,                                    price: 380 },
-    { source: "civitatis",   tourName: "Sierra de Urbasa",       guestName: "Erik Lindqvist",  guestEmail: "erik@mail.se",      phone: "+46 70 123 45 67",  date: d(22,8),  participants: 8,  duration: null, nationality: "SE", routeType: "larga",  allDay: true,  status: "confirmed", externalRef: "CIV-F22", notes: null,                                    price: 520 },
-    { source: "manual",      tourName: "Ruta del Vino Navarra",  guestName: "Claire Dupont",   guestEmail: "claire@mail.fr",    phone: "+33 6 87 65 43 21", date: d(24,10), participants: 5,  duration: 240,  nationality: "FR", routeType: "media",  allDay: false, status: "confirmed", externalRef: null,      notes: "Aniversario",                          price: 350 },
-    { source: "wordpress",   tourName: "Bardenas Reales",        guestName: "Giulia Ferrari",  guestEmail: "giulia@mail.it",    phone: "+39 338 765 4321",  date: d(26,9),  participants: 2,  duration: 120,  nationality: "IT", routeType: "corta",  allDay: false, status: "confirmed", externalRef: null,      notes: null,                                    price: 160 },
-    { source: "civitatis",   tourName: "Ruta del Vino Navarra",  guestName: "Stefan Bauer",    guestEmail: "stefan@mail.de",    phone: "+49 176 98765432",  date: d(28,10), participants: 4,  duration: 180,  nationality: "DE", routeType: "media",  allDay: false, status: "confirmed", externalRef: "CIV-F28", notes: null,                                    price: 280 },
-    { source: "manual",      tourName: "Bardenas Reales",        guestName: "Pablo Moreno",    guestEmail: "pablo@mail.es",     phone: "+34 677 890 123",   date: d(30,9),  participants: 6,  duration: 120,  nationality: "ES", routeType: "corta",  allDay: false, status: "confirmed", externalRef: null,      notes: null,                                    price: 300 },
-    // Conflictos futuros
-    { source: "getyourguide",tourName: "Bardenas Reales",        guestName: "Thomas Petit",    guestEmail: "thomas@mail.fr",    phone: "+33 6 55 44 33 22", date: d(2,10),  participants: 2,  duration: 120,  nationality: "FR", routeType: "corta",  allDay: false, status: "conflict",  externalRef: "GYG-CF1", notes: "Se solapa con Sophie Martin",          price: 160 },
-    { source: "viator",      tourName: "Sierra de Urbasa",       guestName: "Wei Zhang",       guestEmail: "wei@mail.cn",       phone: "+86 138 0013 8000", date: d(4,10),  participants: 4,  duration: 180,  nationality: "CN", routeType: "media",  allDay: false, status: "conflict",  externalRef: "VIA-CF2", notes: "Se solapa con la jornada de Carlos", price: 280 },
-  ];
+  // Raccourcis vers les tours du catalogue
+  const tCivitatis   = toursFor("civitatis")[0] ?? null;    // Ruta Muy Corta (60€/pers)
+  const tViator      = toursFor("viator")[0] ?? null;       // Ruta Corta (160€ groupe)
+  const tGYG         = toursFor("getyourguide")[0] ?? null; // Ruta Corta (160€ groupe)
+  const tBarBlanca   = tourByName("Bardena Blanca");
+  const tAtardecer   = tourByName("Atardecer");
+  const tBarReales   = tourByName("Bardenas Reales");
+  const tBarNegra    = tourByName("Bardena Negra");
+  const tSend4x4     = tourByName("Senderismo + 4x4");
+  const tTresBard    = tourByName("Las Tres Bardenas");
+  const tSendMedia   = tourByName("Senderismo Media");
+  const tBodega      = tourByName("Bardenas y Bodega");
 
-  const allBookings = [...bookings, ...futureBookings];
+  function fb(
+    source: string, tour: typeof catalogTours[0] | null,
+    guest: { name: string; email: string; phone: string | null; nat: string },
+    daysOffset: number, hour: number, participants: number,
+    status: string, externalRef: string | null, notes: string | null,
+    min = 0,
+  ): BookingInput {
+    const t = tour ?? (toursFor(source)[0] ?? catalogTours[0]);
+    const price = t.pricingMode === "person"
+      ? Math.round(t.price * participants)
+      : t.price;
+    return {
+      source, guestName: guest.name, guestEmail: guest.email, phone: guest.phone,
+      tourName: t.name, tourId: t.id, date: d(daysOffset, hour, min),
+      participants, duration: t.duration, nationality: guest.nat,
+      routeType: t.routeType, allDay: false,
+      status, externalRef, notes, price,
+    };
+  }
+
+  const G = GUESTS;
+  const futureBookings: BookingInput[] = [
+    fb("viator",       tViator,    G[0],  2, 9,  3, "confirmed", "VIA-F01", null),
+    fb("getyourguide", tGYG,       G[1],  3, 10, 5, "pending",   "GYG-F02", "Grupo con niños"),
+    fb("civitatis",    tCivitatis, G[2],  4, 8,  8, "confirmed", "CIV-F03", "Llevar comida"),
+    fb("manual",       tBarNegra,  G[3],  5, 14, 2, "refused",   null,      "Conflicto de horario"),
+    fb("wordpress",    tBarReales, G[4],  6, 9,  4, "confirmed", null,      null, 30),
+    fb("viator",       tViator,    G[5],  8, 11, 6, "confirmed", "VIA-F08", null),
+    fb("getyourguide", tGYG,       G[6],  8, 15, 2, "pending",   "GYG-F08", null),
+    fb("civitatis",    tCivitatis, G[7],  10, 8, 10,"confirmed", "CIV-F10", null),
+    fb("manual",       tSendMedia, G[23], 11, 10, 3,"confirmed", null,      null),
+    fb("viator",       tViator,    G[8],  13, 9,  4, "pending",  "VIA-F13", null),
+    fb("getyourguide", tGYG,       G[9],  15, 9,  2, "confirmed","GYG-F15", null),
+    fb("civitatis",    tCivitatis, G[10], 16, 10, 5, "confirmed","CIV-F16", "Grupo familiar"),
+    fb("viator",       tViator,    G[12], 19, 9,  3, "confirmed","VIA-F19", null),
+    fb("wordpress",    tBarBlanca, G[13], 20, 11, 6, "confirmed", null,     null),
+    fb("civitatis",    tCivitatis, G[14], 22, 8,  8, "confirmed","CIV-F22", null),
+    fb("manual",       tBodega,    G[16], 24, 10, 5, "confirmed", null,     "Aniversario"),
+    fb("wordpress",    tAtardecer, G[17], 26, 9,  2, "confirmed", null,     null),
+    fb("civitatis",    tCivitatis, G[18], 28, 10, 4, "confirmed","CIV-F28", null),
+    fb("manual",       tTresBard,  G[19], 30, 9,  6, "confirmed", null,     null),
+    // Conflictos futuros (même jour que Sophie Martin et Carlos López)
+    fb("getyourguide", tGYG,       G[29], 2, 10,  2, "conflict", "GYG-CF1", "Se solapa con Sophie Martin"),
+    fb("viator",       tSend4x4,   G[22], 4, 10,  4, "conflict", "VIA-CF2", "Se solapa con Carlos López"),
+  ];
 
   // ── Créneaux bloqués ──────────────────────────────────────────────
   function abs(year: number, month: number, day: number, hour = 12, min = 0): Date {
@@ -208,11 +245,13 @@ export async function POST() {
     { date: abs(2027, 7, 3),   duration: null, allDay: true,  reason: "💍 Boda de Clara y Alexis" },
   ];
 
+  const allBookings = [...bookings, ...futureBookings];
+
   try {
     await prisma.booking.createMany({ data: allBookings });
     await prisma.blockedSlot.createMany({ data: blockedSlots });
 
-    const conflicts = allBookings.filter(b => b.status === "conflict").length;
+    const conflicts = allBookings.filter((b) => b.status === "conflict").length;
     await prisma.log.create({
       data: {
         action: "created",
@@ -221,7 +260,12 @@ export async function POST() {
       },
     });
 
-    return NextResponse.json({ created: allBookings.length, historical: bookings.length, future: futureBookings.length, blocked: blockedSlots.length });
+    return NextResponse.json({
+      created: allBookings.length,
+      historical: bookings.length,
+      future: futureBookings.length,
+      blocked: blockedSlots.length,
+    });
   } catch (err) {
     console.error("[seed] Error:", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });

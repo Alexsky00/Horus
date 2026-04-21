@@ -2,6 +2,39 @@
 
 ---
 
+## v1.8.1
+_Release date: 2026-04-21_
+_Status: Stable_
+
+### Bug fixes
+- **Admin — delete confirmation** — clicking ✕ on a tour now shows a confirm dialog before deleting (was immediate)
+- **Inactive tour hidden from booking form** — dashboard and calendar booking forms now fetch `/api/tours` (active only) instead of `/api/tours?all=true`; inactive tours no longer appear in the tour select
+
+### Improvements
+- **Dashboard booking date** — date now includes full year (e.g. `22/04/2026 09:00`) with a single-letter day-of-week badge (L/M/X/J/V/S/D)
+- **Admin — catalog row editing** — each tour row has an ✎ button that expands an inline edit form for all fields (name, category, duration, price, pricing mode, route type, platforms)
+- **Admin — category select** — "Nueva ruta" category field is now a dropdown listing all known categories, with a "Custom category" option that reveals a free-text input
+- **Admin — route tariffs section removed** — pricing is now managed entirely through the tour catalog
+- **Stats — heatmap** — colors changed to blue shades (4 levels); legend updated accordingly; grid changed to 6 months per row (was 4), reducing overall height
+
+---
+
+## v1.8
+_Release date: 2026-04-20_
+_Status: Stable_
+
+### New features
+- **Admin — Tour catalog** — new section to manage 14 tours: initialization, inline price CRUD, active/inactive toggle, delete with confirmation, manual add
+- **Admin — free-text category** — category field in "Nueva ruta" accepts any string with autocomplete suggestions from existing tours
+- **Booking form (dashboard + calendar)** — tour select filtered by platform; auto-fills name, duration, route type and price on selection
+- **Civitatis — per-person pricing** — `price × participants` formula shown live in the form; per-person breakdown shown on BookingCard
+- **BookingCard** — price displayed in green; per-person breakdown for Civitatis (`60€/pers.`)
+- **Calendar side panel** — "Precio" row visible when a booking has a price (between Participantes and Tipo ruta)
+- **Stats — top tours** — colored platform badges (Viator / GYG / Civitatis / WordPress / Manual) displayed under each tour name
+- **Demo seed** — requires catalog initialized first; uses real tour names and IDs from catalog; Civitatis uses per-person pricing
+
+---
+
 ## v1.7.2
 _Release date: 2026-04-20_
 _Status: Stable_

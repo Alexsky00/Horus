@@ -13,6 +13,7 @@ model Booking {
   guestName    String
   guestEmail   String
   tourName     String
+  tourId       String?  // ref to Tour catalog (null for legacy bookings)
   date         DateTime
   participants Int
   duration     Int?     // durée en minutes (ex: 180 = 3h)
@@ -26,6 +27,20 @@ model Booking {
   price        Float?   // revenu total de la réservation (€), null = non renseigné
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model Tour {
+  id          String   @id @default(cuid())
+  name        String
+  category    String   // "4x4" | "senderismo" | "cultural" | "autobus" | "platform"
+  duration    Int      // minutes
+  price       Float
+  pricingMode String   @default("group") // "group" | "person"
+  routeType   String   // "corta" | "media" | "larga"
+  platforms   String   // JSON array: ["civitatis"] | ["viator","getyourguide"] | ["wordpress","manual"] | ["manual"]
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
 }
 
 model BlockedSlot {

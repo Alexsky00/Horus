@@ -18,6 +18,7 @@ export type Booking = {
   guestName: string;
   guestEmail: string;
   tourName: string;
+  tourId: string | null;
   date: string;
   participants: number;
   duration: number | null;
@@ -79,8 +80,9 @@ export default function BookingCard({
 
   const date = new Date(booking.date);
   const isPast = date < new Date();
-  const dateStr = date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
-  const timeStr = date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+  const DAY_LETTERS = ["D","L","M","X","J","V","S"];
+  const dayLetter = DAY_LETTERS[date.getDay()];
+  const dateStr = `${String(date.getDate()).padStart(2,"0")}/${String(date.getMonth()+1).padStart(2,"0")}/${date.getFullYear()} ${String(date.getHours()).padStart(2,"0")}:${String(date.getMinutes()).padStart(2,"0")}`;
 
   function handleDelete() {
     if (confirm(`¿Eliminar la reserva de ${booking.guestName}?`)) {
@@ -128,10 +130,9 @@ export default function BookingCard({
 
       <h3 className="font-semibold text-white">{booking.tourName}</h3>
       <p className="text-slate-400 text-sm">
-        {dateStr}
         {booking.allDay
-          ? <span className="ml-2 text-amber-400 font-medium">☀ Toda la jornada</span>
-          : <span> a las {timeStr}</span>
+          ? <span className="text-amber-400 font-medium">☀ Toda la jornada</span>
+          : <><span className="inline-flex items-center justify-center w-4 h-4 rounded text-[10px] font-bold bg-slate-700 text-slate-300 mr-1">{dayLetter}</span>{dateStr}</>
         }
         {" · "}{booking.participants} pers.
         {!booking.allDay && booking.duration && (
@@ -145,6 +146,16 @@ export default function BookingCard({
         {booking.guestName}{booking.nationality && <Flag code={booking.nationality} size="1.1rem" />} — <a href={`mailto:${booking.guestEmail}`} className="text-amber-400 hover:underline">{booking.guestEmail}</a>
         {booking.phone && <span className="ml-2 text-slate-400">· <a href={`tel:${booking.phone}`} className="hover:text-amber-400">{booking.phone}</a></span>}
       </p>
+      {booking.price != null && (
+        <p className="text-slate-400 text-xs mt-1">
+          <span className="text-green-400 font-medium">{booking.price}€</span>
+          {booking.source === "civitatis" && booking.participants > 1 && (
+            <span className="ml-1 text-slate-500">
+              ({Math.round((booking.price / booking.participants) * 100) / 100}€/pers.)
+            </span>
+          )}
+        </p>
+      )}
       {booking.notes && <p className="text-slate-500 text-xs mt-1 italic">{booking.notes}</p>}
 
       {(booking.status === "pending" || booking.status === "conflict") && !isPast && (

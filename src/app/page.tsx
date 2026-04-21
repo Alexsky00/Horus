@@ -424,18 +424,21 @@ function Stat({ label, value, color, onClick, highlight }: { label: string; valu
   );
 }
 
+type TourOption = { id: string; name: string; category: string; duration: number; price: number; pricingMode: string; routeType: string; platforms: string; };
+
 function SimulateOTA({ onCreated }: { onCreated: () => void }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [conflictWarning, setConflictWarning] = useState<string | null>(null);
-  const [routePrices, setRoutePrices] = useState<Record<string, string>>({});
+  const [allTours, setAllTours] = useState<TourOption[]>([]);
   const [form, setForm] = useState({
     source: "viator",
+    tourId: "",
     guestName: "Juan García",
     guestEmail: "juan@example.com",
     phone: "",
-    tourName: "Bardenas Reales",
+    tourName: "",
     date: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10) + "T09:00",
     participants: "2",
     duration: "",
@@ -447,14 +450,59 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
   });
 
   useEffect(() => {
-    fetch("/api/settings")
+    fetch("/api/tours")
       .then(r => r.json())
-      .then((s: Record<string, string>) => setRoutePrices({
-        corta: s["price.route.corta"] ?? "",
-        media: s["price.route.media"] ?? "",
-        larga: s["price.route.larga"] ?? "",
-      }));
+      .then(setAllTours);
   }, []);
+
+  // Tours available for the selected source platform
+  const platformTours = allTours.filter((t) => {
+    const platforms: string[] = JSON.parse(t.platforms);
+    return platforms.includes(form.source) && t;
+  });
+
+  // Selected tour object
+  const selectedTour = allTours.find(t => t.id === form.tourId) ?? null;
+  const isPerPerson = selectedTour?.pricingMode === "person";
+  const perPersonPrice = selectedTour?.price ?? 0;
+  const computedTotal = isPerPerson ? perPersonPrice * Number(form.participants || 1) : null;
+
+  function applyTour(tourId: string) {
+    if (tourId === "__manual__") {
+      setForm(f => ({ ...f, tourId: "__manual__", tourName: "", duration: "", routeType: "", price: "" }));
+      return;
+    }
+    if (!tourId) {
+      setForm(f => ({ ...f, tourId: "", tourName: "", duration: "", routeType: "", price: "" }));
+      return;
+    }
+    const tour = allTours.find(t => t.id === tourId);
+    if (!tour) return;
+    const totalPrice = tour.pricingMode === "person"
+      ? String(tour.price * Number(form.participants || 1))
+      : String(tour.price);
+    setForm(f => ({
+      ...f,
+      tourId: tour.id,
+      tourName: tour.name,
+      duration: String(tour.duration),
+      routeType: tour.routeType,
+      price: totalPrice,
+    }));
+  }
+
+  function handleSourceChange(source: string) {
+    // Reset tour selection when platform changes
+    setForm(f => ({ ...f, source, tourId: "", tourName: "", duration: "", routeType: "", price: "" }));
+  }
+
+  function handleParticipantsChange(val: string) {
+    if (isPerPerson) {
+      setForm(f => ({ ...f, participants: val, price: String(perPersonPrice * Number(val || 1)) }));
+    } else {
+      setForm(f => ({ ...f, participants: val }));
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -464,7 +512,13 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, participants: Number(form.participants), duration: form.duration ? Number(form.duration) : null, price: form.price ? Number(form.price) : null }),
+        body: JSON.stringify({
+          ...form,
+          participants: Number(form.participants),
+          duration: form.duration ? Number(form.duration) : null,
+          price: form.price ? Number(form.price) : null,
+          tourId: (form.tourId && form.tourId !== "__manual__") ? form.tourId : null,
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -505,7 +559,7 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-slate-400 block mb-1">Plataforma</label>
-              <select value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })}
+              <select value={form.source} onChange={(e) => handleSourceChange(e.target.value)}
                 className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
                 <option value="viator">Viator</option>
                 <option value="getyourguide">GetYourGuide</option>
@@ -516,8 +570,33 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
             </div>
             <div>
               <label className="text-xs text-slate-400 block mb-1">Tour / Excursión</label>
-              <input value={form.tourName} onChange={(e) => setForm({ ...form, tourName: e.target.value })}
-                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
+              {platformTours.length > 0 ? (
+                <select
+                  value={form.tourId}
+                  onChange={(e) => applyTour(e.target.value)}
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white"
+                >
+                  <option value="">— Seleccionar tour</option>
+                  {platformTours.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} {t.pricingMode === "person" ? `(${t.price}€/pers.)` : `(${t.price}€)`}
+                    </option>
+                  ))}
+                  <option value="__manual__">Otro (libre)</option>
+                </select>
+              ) : (
+                <input value={form.tourName} onChange={(e) => setForm({ ...form, tourName: e.target.value })}
+                  placeholder="Nombre del tour"
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
+              )}
+              {form.tourId === "__manual__" && (
+                <input
+                  value={form.tourName}
+                  onChange={(e) => setForm(f => ({ ...f, tourName: e.target.value }))}
+                  placeholder="Nombre del tour"
+                  className="w-full mt-1 bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white"
+                />
+              )}
             </div>
             <div>
               <label className="text-xs text-slate-400 block mb-1">Nombre del cliente</label>
@@ -561,7 +640,7 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
             )}
             <div>
               <label className="text-xs text-slate-400 block mb-1">Participantes</label>
-              <input type="number" min="1" value={form.participants} onChange={(e) => setForm({ ...form, participants: e.target.value })}
+              <input type="number" min="1" value={form.participants} onChange={(e) => handleParticipantsChange(e.target.value)}
                 className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white" />
             </div>
             <div>
@@ -575,18 +654,10 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
               </select>
             </div>
             <div>
-              <label className="text-xs text-slate-400 block mb-1">Tipo de ruta (opcional)</label>
-              <select value={form.routeType} onChange={(e) => {
-                const rt = e.target.value;
-                const prevTariff = routePrices[form.routeType] ?? "";
-                const newTariff  = routePrices[rt] ?? "";
-                setForm(f => ({
-                  ...f,
-                  routeType: rt,
-                  price: (f.price === "" || f.price === prevTariff) ? newTariff : f.price,
-                }));
-              }}
-                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
+              <label className="text-xs text-slate-400 block mb-1">Tipo de ruta</label>
+              <select value={form.routeType} onChange={(e) => setForm(f => ({ ...f, routeType: e.target.value }))}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white"
+                disabled={!!selectedTour}>
                 <option value="">— Sin especificar</option>
                 <option value="corta">🟢 Ruta corta</option>
                 <option value="media">🟡 Ruta media</option>
@@ -605,7 +676,8 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
             <div>
               <label className="text-xs text-slate-400 block mb-1">Duración (opcional)</label>
               <select value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })}
-                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
+                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white"
+                disabled={!!selectedTour}>
                 <option value="">— Sin especificar</option>
                 <option value="60">1h</option>
                 <option value="90">1h30</option>
@@ -627,10 +699,15 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
               <div className="relative">
                 <input type="number" min="0" step="0.01" value={form.price}
                   onChange={(e) => setForm({ ...form, price: e.target.value })}
-                  placeholder={form.routeType && routePrices[form.routeType] ? `Tarifa: ${routePrices[form.routeType]}` : "Ej: 250"}
+                  placeholder="Ej: 250"
                   className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white pr-7 placeholder-slate-500" />
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs">€</span>
               </div>
+              {isPerPerson && computedTotal !== null && (
+                <p className="text-xs text-amber-400 mt-1">
+                  {perPersonPrice}€ × {form.participants} pers. = {computedTotal}€
+                </p>
+              )}
             </div>
           </div>
           <div>

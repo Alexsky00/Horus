@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Horus v1.8.1 — Patch Tests</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #0f172a; color: #cbd5e1; font-size: 14px; line-height: 1.5; }
+  header { background: #1e293b; border-bottom: 1px solid #334155; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; position: sticky; top: 0; z-index: 50; }
+  header h1 { color: #f1f5f9; font-size: 18px; font-weight: 700; }
+  header .meta { color: #64748b; font-size: 12px; }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn { padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-slate { background: #334155; color: #cbd5e1; }
+  .btn-amber { background: #f59e0b; color: #000; }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 80px; }
+
+  /* Patch banner */
+  .patch-banner { background: #1e293b; border: 1px solid #ef444444; border-radius: 12px; padding: 16px 20px; margin-bottom: 28px; }
+  .patch-banner h2 { color: #f87171; font-size: 13px; font-weight: 700; margin-bottom: 10px; letter-spacing: .05em; }
+  .patch-banner ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .patch-banner li { font-size: 13px; color: #94a3b8; padding-left: 20px; position: relative; }
+  .patch-banner li::before { content: "✗"; position: absolute; left: 0; color: #f87171; font-size: 11px; }
+  .patch-banner li strong { color: #e2e8f0; }
+  .patch-banner li em { color: #94a3b8; font-style: normal; }
+
+  /* Scope banner */
+  .scope-banner { background: #0f2a1a; border: 1px solid #16a34a44; border-radius: 12px; padding: 14px 20px; margin-bottom: 28px; font-size: 12px; color: #86efac; }
+  .scope-banner strong { color: #4ade80; }
+
+  /* Section */
+  section { margin-bottom: 32px; }
+  section h2 { color: #f1f5f9; font-size: 15px; font-weight: 700; padding: 10px 14px; background: #1e293b; border-radius: 8px 8px 0 0; border: 1px solid #334155; border-bottom: none; display: flex; align-items: center; gap: 8px; }
+  section h2 .fix-badge  { background: #ef4444; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; letter-spacing: .04em; }
+  section h2 .reg-badge  { background: #334155; color: #94a3b8; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; letter-spacing: .04em; }
+  section h3 { color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; padding: 10px 14px 4px; background: #1e2d3d; border-left: 1px solid #334155; border-right: 1px solid #334155; }
+
+  table { width: 100%; border-collapse: collapse; border: 1px solid #334155; border-top: none; border-radius: 0 0 8px 8px; overflow: hidden; }
+  thead tr { background: #1e293b; }
+  thead th { padding: 8px 10px; text-align: left; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid #334155; }
+  tbody tr { border-bottom: 1px solid #1e293b; transition: background .1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #1e293b44; }
+  tbody tr.fix-row { background: #ef444408; }
+  tbody tr.fix-row:hover { background: #ef444412; }
+  tbody tr.reg-row { background: #33415508; }
+  td { padding: 8px 10px; vertical-align: top; }
+  td:first-child { color: #475569; font-size: 12px; white-space: nowrap; font-family: monospace; }
+  td.desc { color: #cbd5e1; max-width: 320px; }
+  td.desc .fix-inline { font-size: 10px; background: #ef444422; color: #f87171; border: 1px solid #ef444444; padding: 1px 5px; border-radius: 4px; margin-right: 4px; font-weight: 600; vertical-align: middle; }
+  td.desc .reg-inline { font-size: 10px; background: #33415522; color: #64748b; border: 1px solid #33415544; padding: 1px 5px; border-radius: 4px; margin-right: 4px; font-weight: 600; vertical-align: middle; }
+  td.expected { color: #94a3b8; font-size: 13px; max-width: 280px; }
+  td.actions { white-space: nowrap; }
+  .action-btn { width: 28px; height: 28px; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; transition: opacity .15s, transform .1s; margin-right: 3px; }
+  .action-btn:hover { transform: scale(1.15); }
+  .action-btn.ok   { background: #16a34a22; border: 1px solid #16a34a66; }
+  .action-btn.fail { background: #dc262622; border: 1px solid #dc262666; }
+  .action-btn.skip { background: #33415522; border: 1px solid #33415566; }
+  .action-btn.active-ok   { background: #16a34a; }
+  .action-btn.active-fail { background: #dc2626; }
+  .action-btn.active-skip { background: #475569; }
+  textarea.note { width: 100%; min-height: 40px; background: #0f172a; border: 1px solid #334155; border-radius: 4px; color: #94a3b8; font-size: 12px; padding: 4px 6px; resize: vertical; margin-top: 4px; font-family: inherit; display: none; }
+  textarea.note.visible { display: block; }
+
+  .progress-bar { height: 4px; background: #1e293b; position: sticky; top: 61px; z-index: 49; }
+  .progress-fill { height: 100%; background: linear-gradient(to right, #ef4444, #10b981); transition: width .3s; }
+
+  #summary { position: fixed; bottom: 16px; right: 16px; background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 12px 16px; font-size: 12px; display: flex; gap: 16px; box-shadow: 0 4px 24px #0006; }
+  #summary span { display: flex; align-items: center; gap: 5px; }
+
+  @media print {
+    header .toolbar { display: none; }
+    #summary { display: none; }
+    .progress-bar { display: none; }
+    .action-btn { display: none; }
+    textarea.note { display: block !important; }
+    body { background: #fff; color: #000; }
+    section h2, section h3 { background: #f5f5f5; color: #000; }
+    td { color: #000 !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Horus v1.8.1 — Patch Tests</h1>
+    <div class="meta">Corrective patch · Reference: v1.8 (test results 2026-04-21)</div>
+  </div>
+  <div class="toolbar">
+    <button class="btn btn-slate" onclick="resetAll()">Reset</button>
+    <button class="btn btn-slate" onclick="importJSON()">Import JSON</button>
+    <button class="btn btn-amber" onclick="exportJSON()">Export JSON</button>
+    <button class="btn btn-slate" onclick="window.print()">Print</button>
+  </div>
+</header>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+<main>
+
+<!-- Patch banner -->
+<div class="patch-banner">
+  <h2>FAILURES FROM v1.8 — Fixed in v1.8.1</h2>
+  <ul>
+    <li><strong>t73 — Inactive tour still visible in booking form</strong>: dashboard and calendar were fetching <em>/api/tours?all=true</em> (bypass active filter) instead of <em>/api/tours</em></li>
+    <li><strong>t74 — No confirmation before tour deletion</strong>: the ✕ button deleted immediately with no confirm/cancel dialog</li>
+  </ul>
+</div>
+
+<!-- Scope banner -->
+<div class="scope-banner">
+  <strong>Scope:</strong> Retest the 2 fixed cases · nearby regression checks · 1 additional improvement (booking year display on dashboard)
+</div>
+
+<!-- FIX 1 — Inactive tour in booking form -->
+<section>
+  <h2>FIX 1 — Inactive tour hidden from booking form <span class="fix-badge">WAS FAIL t73</span></h2>
+  <h3>Direct retest</h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr class="fix-row"><td>F1.1</td><td class="desc"><span class="fix-inline">FIX</span>Go to <strong>/admin</strong> → disable "Ruta Corta" (Activo toggle OFF)</td><td class="expected">Row drops to 40% opacity</td><td class="actions"></td><td></td></tr>
+      <tr class="fix-row"><td>F1.2</td><td class="desc"><span class="fix-inline">FIX</span>Go to dashboard → click <strong>+ Nueva reserva</strong> → Source = Viator → open Tour select</td><td class="expected">"Ruta Corta" is <strong>absent</strong> from the list</td><td class="actions"></td><td></td></tr>
+      <tr class="fix-row"><td>F1.3</td><td class="desc"><span class="fix-inline">FIX</span>Go to <strong>/calendar</strong> → click <strong>+ Nueva reserva</strong> → Source = Viator → open Tour select</td><td class="expected">"Ruta Corta" is <strong>absent</strong> from the list</td><td class="actions"></td><td></td></tr>
+      <tr class="fix-row"><td>F1.4</td><td class="desc"><span class="fix-inline">FIX</span>Back in <strong>/admin</strong> → re-enable "Ruta Corta" (Activo toggle ON)</td><td class="expected">"Ruta Corta" reappears in the booking form Tour select (both dashboard and calendar)</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+  <h3>Regression — active tours still work normally</h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr class="reg-row"><td>R1.1</td><td class="desc"><span class="reg-inline">REGRESSION</span>Dashboard → + Nueva reserva → Source = Viator → Tour select</td><td class="expected">All active Viator tours present (Ruta Corta, etc.)</td><td class="actions"></td><td></td></tr>
+      <tr class="reg-row"><td>R1.2</td><td class="desc"><span class="reg-inline">REGRESSION</span>Source = Civitatis → Tour select</td><td class="expected">Active Civitatis tours present (Ruta Muy Corta, etc.)</td><td class="actions"></td><td></td></tr>
+      <tr class="reg-row"><td>R1.3</td><td class="desc"><span class="reg-inline">REGRESSION</span>Select a tour → verify auto-fill still works</td><td class="expected">Duration, route type and price auto-filled as before</td><td class="actions"></td><td></td></tr>
+      <tr class="reg-row"><td>R1.4</td><td class="desc"><span class="reg-inline">REGRESSION</span>Admin → tour table still shows all 14 tours (including inactive)</td><td class="expected">All 14 tours visible in admin table regardless of active state</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- FIX 2 — Delete confirmation -->
+<section>
+  <h2>FIX 2 — Confirmation dialog before tour deletion <span class="fix-badge">WAS FAIL t74</span></h2>
+  <h3>Direct retest</h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr class="fix-row"><td>F2.1</td><td class="desc"><span class="fix-inline">FIX</span>In <strong>/admin</strong> → tour catalog → click ✕ on any tour</td><td class="expected">Browser confirm dialog appears: <strong>"Delete this tour?"</strong></td><td class="actions"></td><td></td></tr>
+      <tr class="fix-row"><td>F2.2</td><td class="desc"><span class="fix-inline">FIX</span>Click <strong>Cancel</strong> in the dialog</td><td class="expected">Dialog closes, tour <strong>not deleted</strong>, table unchanged</td><td class="actions"></td><td></td></tr>
+      <tr class="fix-row"><td>F2.3</td><td class="desc"><span class="fix-inline">FIX</span>Click ✕ again → click <strong>OK</strong> to confirm</td><td class="expected">Tour deleted from the table immediately</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- IMPROVEMENT — Year on booking card -->
+<section>
+  <h2>IMPROVEMENT — Year displayed on booking cards</h2>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>I1.1</td><td class="desc">Load the dashboard — inspect any booking card date line</td><td class="expected">Full year visible: e.g. <strong>"martes, 22 de abril de 2026"</strong> (not "martes, 22 de abril")</td><td class="actions"></td><td></td></tr>
+      <tr><td>I1.2</td><td class="desc">Check a past booking card (e.g. from 2025)</td><td class="expected">Year shown — useful to distinguish bookings across different years</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+</section>
+
+</main>
+
+<div id="summary">
+  <span>✅ <strong id="cntOk">0</strong></span>
+  <span>❌ <strong id="cntFail">0</strong></span>
+  <span>⏭ <strong id="cntSkip">0</strong></span>
+  <span style="color:#64748b">/ <strong id="cntTotal">0</strong></span>
+</div>
+
+<script>
+const STORAGE_KEY = "horus-tests-patch-v1.8.1";
+
+function allRows() {
+  return document.querySelectorAll("tbody tr");
+}
+
+function buildRows() {
+  let idx = 0;
+  allRows().forEach(row => {
+    const tdAction = row.querySelector("td.actions");
+    const tdNote   = row.querySelector("td:last-child");
+    if (!tdAction) return;
+    const id = "t" + (idx++);
+    row.dataset.testId = id;
+    tdAction.innerHTML = `
+      <button class="action-btn ok"   data-id="${id}" data-val="ok"   title="OK">✅</button>
+      <button class="action-btn fail" data-id="${id}" data-val="fail" title="Fail">❌</button>
+      <button class="action-btn skip" data-id="${id}" data-val="skip" title="Skip">⏭</button>
+    `;
+    const noteArea = document.createElement("textarea");
+    noteArea.className = "note";
+    noteArea.placeholder = "Notes…";
+    noteArea.dataset.id = id;
+    tdNote.appendChild(noteArea);
+    tdAction.querySelectorAll(".action-btn").forEach(btn => {
+      btn.addEventListener("click", () => setResult(id, btn.dataset.val));
+    });
+    noteArea.addEventListener("input", () => saveAll());
+  });
+  updateCount();
+}
+
+function setResult(id, val) {
+  const row = document.querySelector(`[data-test-id="${id}"]`);
+  if (!row) return;
+  const prev = row.dataset.result;
+  row.dataset.result = (prev === val) ? "" : val;
+  row.querySelectorAll(".action-btn").forEach(btn => {
+    btn.classList.remove("active-ok","active-fail","active-skip");
+    if (btn.dataset.val === row.dataset.result) btn.classList.add("active-"+btn.dataset.val);
+  });
+  const note = row.querySelector("textarea.note");
+  if (row.dataset.result === "fail") note.classList.add("visible");
+  else note.classList.remove("visible");
+  saveAll();
+  updateCount();
+}
+
+function updateCount() {
+  const rows = [...allRows()].filter(r => r.dataset.testId);
+  const ok   = rows.filter(r => r.dataset.result === "ok").length;
+  const fail = rows.filter(r => r.dataset.result === "fail").length;
+  const skip = rows.filter(r => r.dataset.result === "skip").length;
+  document.getElementById("cntOk").textContent   = ok;
+  document.getElementById("cntFail").textContent  = fail;
+  document.getElementById("cntSkip").textContent  = skip;
+  document.getElementById("cntTotal").textContent = rows.length;
+  const done = ok + fail + skip;
+  document.getElementById("progressFill").style.width = rows.length ? (done/rows.length*100)+"%" : "0%";
+}
+
+function saveAll() {
+  const data = {};
+  allRows().forEach(row => {
+    if (!row.dataset.testId) return;
+    const note = row.querySelector("textarea.note");
+    data[row.dataset.testId] = { result: row.dataset.result||"", note: note ? note.value : "" };
+  });
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function loadAll() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  const data = JSON.parse(raw);
+  allRows().forEach(row => {
+    if (!row.dataset.testId) return;
+    const d = data[row.dataset.testId];
+    if (!d) return;
+    if (d.result) setResult(row.dataset.testId, d.result);
+    const note = row.querySelector("textarea.note");
+    if (note && d.note) { note.value = d.note; if (d.result==="fail") note.classList.add("visible"); }
+  });
+}
+
+function resetAll() {
+  if (!confirm("Reset all results?")) return;
+  localStorage.removeItem(STORAGE_KEY);
+  allRows().forEach(row => {
+    row.dataset.result = "";
+    row.querySelectorAll(".action-btn").forEach(b => b.classList.remove("active-ok","active-fail","active-skip"));
+    const note = row.querySelector("textarea.note");
+    if (note) { note.value = ""; note.classList.remove("visible"); }
+  });
+  updateCount();
+}
+
+function exportJSON() {
+  const rows = [...allRows()].filter(r => r.dataset.testId);
+  const out = rows.map(row => {
+    const id = row.dataset.testId;
+    const note = row.querySelector("textarea.note");
+    const desc = row.querySelector("td.desc")?.textContent?.trim().replace(/\s+/g," ") || "";
+    const expected = row.querySelector("td.expected")?.textContent?.trim().replace(/\s+/g," ") || "";
+    return { id, desc, expected, result: row.dataset.result||"", note: note?.value||"" };
+  });
+  const blob = new Blob([JSON.stringify({ version:"1.8.1", date: new Date().toISOString(), tests: out }, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "test-results-patch-v1.8.1.json";
+  a.click();
+}
+
+function importJSON() {
+  const input = document.createElement("input");
+  input.type = "file"; input.accept = ".json";
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        const map = {};
+        (data.tests||[]).forEach(t => { map[t.id] = t; });
+        allRows().forEach(row => {
+          if (!row.dataset.testId) return;
+          const d = map[row.dataset.testId];
+          if (!d) return;
+          if (d.result) setResult(row.dataset.testId, d.result);
+          const note = row.querySelector("textarea.note");
+          if (note && d.note) { note.value = d.note; if (d.result==="fail") note.classList.add("visible"); }
+        });
+        saveAll();
+      } catch { alert("Invalid JSON file"); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+buildRows();
+loadAll();
+</script>
+</body>
+</html>

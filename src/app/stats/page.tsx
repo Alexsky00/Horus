@@ -19,7 +19,7 @@ interface Stats {
   };
   byMonth: { label: string; confirmed: number; refused: number; conflict: number; pending: number; participants: number; revenue: number }[];
   byPlatform: { source: string; total: number; confirmed: number; participants: number; revenue: number; confirmationRate: number }[];
-  topTours: { name: string; count: number; participants: number; revenue: number }[];
+  topTours: { name: string; count: number; participants: number; revenue: number; sources: string[] }[];
   topNationalities: { code: string; count: number }[];
   byDayOfWeek: { label: string; count: number }[];
   byTimeSlot: { slot: string; label: string; count: number }[];
@@ -44,10 +44,10 @@ const DAYS_SHORT = ["L","M","X","J","V","S","D"];
 function heatColor(count: number, max: number): string {
   if (count === 0 || max === 0) return "bg-slate-700/40";
   const r = count / max;
-  if (r <= 0.25) return "bg-violet-700/60";
-  if (r <= 0.50) return "bg-orange-600/65";
-  if (r <= 0.75) return "bg-amber-400/70";
-  return "bg-green-500/80";
+  if (r <= 0.25) return "bg-blue-900/70";
+  if (r <= 0.50) return "bg-blue-700/75";
+  if (r <= 0.75) return "bg-blue-500/80";
+  return "bg-blue-400/90";
 }
 
 type DayCell = { date: string; total: number; confirmed: number } | null;
@@ -189,28 +189,28 @@ export default function StatsPage() {
               <h2 className="text-white font-semibold text-sm">Actividad del año — {filterYear}</h2>
               <div className="flex items-center gap-2 text-xs text-slate-400">
                 <span>Menos</span>
-                {["bg-slate-700/40","bg-violet-700/60","bg-orange-600/65","bg-amber-400/70","bg-green-500/80"].map((c, i) => (
+                {["bg-slate-700/40","bg-blue-900/70","bg-blue-700/75","bg-blue-500/80","bg-blue-400/90"].map((c, i) => (
                   <div key={i} className={`w-3.5 h-3.5 rounded-sm ${c}`} />
                 ))}
                 <span>Más</span>
               </div>
             </div>
-            <div className="px-5 py-4">
+            <div className="px-5 py-3">
               {(() => {
                 const cm: Record<string, { total: number; confirmed: number }> = {};
                 for (const d of stats.byDay) cm[d.date] = d;
                 const maxPerDay = stats.byDay.reduce((acc, d) => Math.max(acc, d.total), 0);
                 return (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
                     {Array.from({ length: 12 }, (_, m) => {
                       const rows = buildMonthGrid(filterYear, m, cm);
                       const flat = rows.flat();
                       return (
                         <div key={m}>
-                          <p className="text-[10px] font-semibold text-slate-300 mb-0.5">{MONTHS_ES[m]}</p>
+                          <p className="text-[9px] font-semibold text-slate-400 mb-0.5">{MONTHS_ES[m]}</p>
                           <div className="grid grid-cols-7 gap-px mb-px">
                             {DAYS_SHORT.map(d => (
-                              <div key={d} className="text-[6px] text-slate-600 text-center">{d}</div>
+                              <div key={d} className="text-[5px] text-slate-600 text-center">{d}</div>
                             ))}
                           </div>
                           <div className="grid grid-cols-7 gap-px">
@@ -327,11 +327,26 @@ export default function StatsPage() {
                 ) : stats.topTours.map((t, i) => (
                   <div key={t.name}>
                     <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-600 text-xs w-4">{i + 1}.</span>
-                        <span className="text-slate-300 text-xs font-medium truncate max-w-32">{t.name}</span>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-slate-600 text-xs w-4 shrink-0">{i + 1}.</span>
+                        <div className="min-w-0">
+                          <span className="text-slate-300 text-xs font-medium block truncate">{t.name}</span>
+                          <div className="flex flex-wrap gap-1 mt-0.5">
+                            {t.sources.map((src) => (
+                              <span key={src} className={`text-xs px-1.5 py-0 rounded font-medium leading-5 ${
+                                src === "viator"        ? "bg-emerald-700/40 text-emerald-300" :
+                                src === "getyourguide" ? "bg-orange-700/40 text-orange-300" :
+                                src === "civitatis"    ? "bg-blue-700/40 text-blue-300" :
+                                src === "wordpress"    ? "bg-purple-700/40 text-purple-300" :
+                                                         "bg-slate-700 text-slate-400"
+                              }`}>
+                                {src === "getyourguide" ? "GYG" : src.charAt(0).toUpperCase() + src.slice(1)}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-slate-500">
+                      <div className="flex items-center gap-3 text-xs text-slate-500 shrink-0 ml-2">
                         <span>{t.count} reservas</span>
                         <span>{t.participants} pers.</span>
                         {t.revenue > 0 && <span className="text-amber-300">{t.revenue} €</span>}

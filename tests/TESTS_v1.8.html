@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Horus v1.8 — Manual Tests</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #0f172a; color: #cbd5e1; font-size: 14px; line-height: 1.5; }
+  header { background: #1e293b; border-bottom: 1px solid #334155; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; position: sticky; top: 0; z-index: 50; }
+  header h1 { color: #f1f5f9; font-size: 18px; font-weight: 700; }
+  header .meta { color: #64748b; font-size: 12px; }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn { padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-slate  { background: #334155; color: #cbd5e1; }
+  .btn-amber  { background: #f59e0b; color: #000; }
+  .btn-green  { background: #16a34a; color: #fff; }
+  .btn-red    { background: #dc2626; color: #fff; }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 80px; }
+
+  /* What's new banner */
+  .whats-new { background: #1e293b; border: 1px solid #f59e0b44; border-radius: 12px; padding: 16px 20px; margin-bottom: 28px; }
+  .whats-new h2 { color: #f59e0b; font-size: 13px; font-weight: 700; margin-bottom: 10px; letter-spacing: .05em; }
+  .whats-new ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .whats-new li { font-size: 13px; color: #94a3b8; padding-left: 20px; position: relative; }
+  .whats-new li::before { content: "→"; position: absolute; left: 0; color: #f59e0b; }
+  .whats-new li strong { color: #e2e8f0; }
+
+  /* Section */
+  section { margin-bottom: 32px; }
+  section h2 { color: #f1f5f9; font-size: 15px; font-weight: 700; padding: 10px 14px; background: #1e293b; border-radius: 8px 8px 0 0; border: 1px solid #334155; border-bottom: none; display: flex; align-items: center; gap: 8px; }
+  section h2 .new-badge { background: #f59e0b; color: #000; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; letter-spacing: .04em; }
+  section h3 { color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; padding: 10px 14px 4px; background: #1e2d3d; border-left: 1px solid #334155; border-right: 1px solid #334155; }
+  section h3 .new-badge { background: #f59e0b; color: #000; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 999px; margin-left: 6px; vertical-align: middle; }
+
+  table { width: 100%; border-collapse: collapse; border: 1px solid #334155; border-top: none; border-radius: 0 0 8px 8px; overflow: hidden; }
+  thead tr { background: #1e293b; }
+  thead th { padding: 8px 10px; text-align: left; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid #334155; }
+  tbody tr { border-bottom: 1px solid #1e293b; transition: background .1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #1e293b44; }
+  tbody tr.new-test { background: #f59e0b0a; }
+  tbody tr.new-test:hover { background: #f59e0b14; }
+  td { padding: 8px 10px; vertical-align: top; }
+  td:first-child { color: #475569; font-size: 12px; white-space: nowrap; font-family: monospace; }
+  td.desc { color: #cbd5e1; max-width: 320px; }
+  td.desc .new-inline { font-size: 10px; background: #f59e0b22; color: #f59e0b; border: 1px solid #f59e0b44; padding: 1px 5px; border-radius: 4px; margin-right: 4px; font-weight: 600; vertical-align: middle; }
+  td.expected { color: #94a3b8; font-size: 13px; max-width: 280px; }
+  td.actions { white-space: nowrap; }
+  .action-btn { width: 28px; height: 28px; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; transition: opacity .15s, transform .1s; margin-right: 3px; }
+  .action-btn:hover { transform: scale(1.15); }
+  .action-btn.ok    { background: #16a34a22; border: 1px solid #16a34a66; }
+  .action-btn.fail  { background: #dc262622; border: 1px solid #dc262666; }
+  .action-btn.skip  { background: #33415522; border: 1px solid #33415566; }
+  .action-btn.active-ok   { background: #16a34a; }
+  .action-btn.active-fail { background: #dc2626; }
+  .action-btn.active-skip { background: #475569; }
+  textarea.note { width: 100%; min-height: 40px; background: #0f172a; border: 1px solid #334155; border-radius: 4px; color: #94a3b8; font-size: 12px; padding: 4px 6px; resize: vertical; margin-top: 4px; font-family: inherit; display: none; }
+  textarea.note.visible { display: block; }
+
+  /* Progress bar */
+  .progress-bar { height: 4px; background: #1e293b; position: sticky; top: 61px; z-index: 49; }
+  .progress-fill { height: 100%; background: linear-gradient(to right, #f59e0b, #10b981); transition: width .3s; }
+
+  /* Summary */
+  #summary { position: fixed; bottom: 16px; right: 16px; background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 12px 16px; font-size: 12px; display: flex; gap: 16px; box-shadow: 0 4px 24px #0006; }
+  #summary span { display: flex; align-items: center; gap: 5px; }
+
+  @media print {
+    header .toolbar { display: none; }
+    #summary { display: none; }
+    .progress-bar { display: none; }
+    .action-btn { display: none; }
+    textarea.note { display: block !important; }
+    body { background: #fff; color: #000; }
+    section h2, section h3 { background: #f5f5f5; color: #000; }
+    td { color: #000 !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Horus v1.8 — Manual Tests</h1>
+    <div class="meta">Ready for testing · Reference: v1.7.2 (stable)</div>
+  </div>
+  <div class="toolbar">
+    <button class="btn btn-slate" onclick="resetAll()">Reset</button>
+    <button class="btn btn-slate" onclick="importJSON()">Import JSON</button>
+    <button class="btn btn-amber" onclick="exportJSON()">Export JSON</button>
+    <button class="btn btn-slate" onclick="window.print()">Print</button>
+  </div>
+</header>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+<main>
+
+<!-- ── What's new banner ── -->
+<div class="whats-new">
+  <h2>WHAT'S NEW IN v1.8 — Changes from v1.7.2</h2>
+  <ul>
+    <li><strong>Admin → Tour Catalog</strong>: new section to manage the 14 tours (initialization, CRUD price, active/inactive toggle, delete, manual add)</li>
+    <li><strong>Admin → New Route</strong>: add tour form with free-text category (free input + suggestions)</li>
+    <li><strong>Booking form (dashboard + calendar)</strong>: tour select filtered by platform — auto-fills name, duration, route type, price</li>
+    <li><strong>Civitatis — per-person pricing</strong>: formula <em>60€ × N pers. = total</em> shown live in the form</li>
+    <li><strong>BookingCard</strong>: price shown in green on each card · per-person breakdown for Civitatis</li>
+    <li><strong>Calendar — side panel</strong>: "Precio" row visible when a booking has a price</li>
+    <li><strong>Stats → Most booked tours</strong>: platform badges (Viator / GYG / Civitatis…) shown under each tour</li>
+    <li><strong>Demo seed data</strong>: requires catalog to be initialized first · uses real names and IDs from the catalog</li>
+  </ul>
+</div>
+
+<!-- ── Setup ── -->
+<section>
+  <h2>Setup before testing</h2>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>P1</td><td class="desc">Run <code>npm run dev</code> in the terminal</td><td class="expected">Server started on http://localhost:3000</td><td class="actions"></td><td></td></tr>
+      <tr><td>P2</td><td class="desc">Open http://localhost:3000/logs</td><td class="expected">Logs page visible</td><td class="actions"></td><td></td></tr>
+      <tr><td>P3</td><td class="desc">Click <strong>"🗑 Vaciar toda la aplicación"</strong> → confirm twice</td><td class="expected">Empty database, dashboard at 0</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>P4</td><td class="desc"><span class="new-inline">UPDATED v1.8</span>Open <strong>/admin</strong> → "Catálogo de tours" section → click <strong>"Inicializar catálogo"</strong></td><td class="expected">Message or reload: 14 tours created in the table. <em>Required before seeding.</em></td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>P5</td><td class="desc"><span class="new-inline">UPDATED v1.8</span>Go back to /logs → click <strong>"✦ Cargar datos de demo"</strong> → confirm</td><td class="expected">Success: ~80 historical bookings + 21 future + 35 blocked — <strong>no 409 error</strong> (which indicates empty catalog)</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── MODULE 1 — Dashboard ── -->
+<section>
+  <h2>MODULE 1 — Dashboard (<code>/</code>)</h2>
+  <h3>1.1 Statistics tiles</h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>1.1.1</td><td class="desc">Load the dashboard</td><td class="expected">6 tiles visible: Pendientes / Confirmadas / Rechazadas / ⚡ Conflictos / Total / 🔒 Bloqueados</td><td class="actions"></td><td></td></tr>
+      <tr><td>1.1.2</td><td class="desc">Check tile numbers</td><td class="expected">Pendientes + Confirmadas + Rechazadas ≤ Total</td><td class="actions"></td><td></td></tr>
+      <tr><td>1.1.3</td><td class="desc">Click the <strong>Pendientes</strong> tile</td><td class="expected">List filtered to pending only</td><td class="actions"></td><td></td></tr>
+      <tr><td>1.1.4</td><td class="desc">Click the <strong>Total</strong> tile</td><td class="expected">Filter reset to "Todos"</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.2 BookingCard <span class="new-badge">UPDATED v1.8</span></h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>1.2.1</td><td class="desc">Inspect a confirmed card</td><td class="expected">Green left border, "Confirmada" label, amber booking code (e.g. RCV)</td><td class="actions"></td><td></td></tr>
+      <tr><td>1.2.2</td><td class="desc">Inspect a pending card</td><td class="expected">Buttons ✓ Aceptar and ✗ Rechazar visible</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>1.2.3</td><td class="desc"><span class="new-inline">NEW v1.8</span>Inspect a card with a price set</td><td class="expected">Green line <strong>"X €"</strong> visible below the client email</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>1.2.4</td><td class="desc"><span class="new-inline">NEW v1.8</span>Inspect a Civitatis card with price (e.g. 8 pers, 480€)</td><td class="expected">Green line "480 €" + grey text "(60€/pers.)" next to it</td><td class="actions"></td><td></td></tr>
+      <tr><td>1.2.5</td><td class="desc">Try to accept/refuse a past booking</td><td class="expected">Aceptar/Rechazar buttons <strong>absent</strong> on past bookings</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.3 Search &amp; filters</h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>1.3.1</td><td class="desc">Type a client name in the search bar</td><td class="expected">Only matching booking(s) displayed</td><td class="actions"></td><td></td></tr>
+      <tr><td>1.3.2</td><td class="desc">Type "Ruta Corta"</td><td class="expected">All bookings for the Ruta Corta tour (viator/GYG)</td><td class="actions"></td><td></td></tr>
+      <tr><td>1.3.3</td><td class="desc">Click <strong>Filtros</strong> → Platform = Civitatis</td><td class="expected">Only Civitatis bookings shown</td><td class="actions"></td><td></td></tr>
+      <tr><td>1.3.4</td><td class="desc">Click <strong>Restablecer filtros</strong></td><td class="expected">All filters reset to zero</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── MODULE 2 — Create booking ── -->
+<section>
+  <h2>MODULE 2 — Create a booking (dashboard) <span class="new-badge">UPDATED v1.8</span></h2>
+  <h3>2.1 Tour select by platform <span class="new-badge">NEW v1.8</span></h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr class="new-test"><td>2.1.1</td><td class="desc">Click <strong>+ Nueva reserva</strong> → Tour / Excursión field</td><td class="expected">A <strong>select</strong> appears (not a free-text field) because tours exist for Viator</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>2.1.2</td><td class="desc">Source = Viator → open the Tour select</td><td class="expected"><strong>"Ruta Corta (160€)"</strong> present in the list</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>2.1.3</td><td class="desc">Select "Ruta Corta"</td><td class="expected">Duration = 3h, Route type = Corta, Price = 160€ <strong>auto-filled</strong>. Duración and Tipo ruta fields greyed out (disabled)</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>2.1.4</td><td class="desc">Change source → <strong>Civitatis</strong></td><td class="expected">Tour select resets. New list: "Ruta Muy Corta (60€/pers.)"</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>2.1.5</td><td class="desc">Select "Ruta Muy Corta" (Civitatis) with 3 participants</td><td class="expected">Price auto-filled = 180€. Formula visible: <strong>"60€ × 3 pers. = 180€"</strong></td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>2.1.6</td><td class="desc">Change participants count (e.g. 5)</td><td class="expected">Price recalculated automatically: <strong>300€</strong>. Formula updated: "60€ × 5 pers. = 300€"</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>2.1.7</td><td class="desc">Change source → Manual → open the Tour select</td><td class="expected">Manual tours present: Bardena Blanca, Atardecer, Bardenas Reales, etc.</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>2.1.8</td><td class="desc">Select <strong>"Otro (libre)"</strong> in the select</td><td class="expected">A free-text field appears below to enter a custom tour name</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <h3>2.2 Validation and creation</h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>2.2.1</td><td class="desc">Submit without selecting a tour</td><td class="expected">Error: required field not filled</td><td class="actions"></td><td></td></tr>
+      <tr><td>2.2.2</td><td class="desc">Select a tour, fill in client + date → Crear reserva</td><td class="expected">Booking created, form closed, Total tile +1</td><td class="actions"></td><td></td></tr>
+      <tr><td>2.2.3</td><td class="desc">Create booking on a blocked slot</td><td class="expected">Error 409: "Franja bloqueada"</td><td class="actions"></td><td></td></tr>
+      <tr><td>2.2.4</td><td class="desc">Create 2 bookings at the same slot (A confirmed, B same time)</td><td class="expected">B created with status "conflict"</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── MODULE 3 — Booking actions ── -->
+<section>
+  <h2>MODULE 3 — Booking actions</h2>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>3.1</td><td class="desc">On a future "pending" card, click ✓ Aceptar</td><td class="expected">Status → "confirmed", tiles updated</td><td class="actions"></td><td></td></tr>
+      <tr><td>3.2</td><td class="desc">On a future "pending" card, click ✗ Rechazar</td><td class="expected">Status → "refused"</td><td class="actions"></td><td></td></tr>
+      <tr><td>3.3</td><td class="desc">Click ✎ on a card → change status via modal</td><td class="expected">Status change modal appears, confirmation required</td><td class="actions"></td><td></td></tr>
+      <tr><td>3.4</td><td class="desc">Click ✕ on a card → confirm</td><td class="expected">Card deleted, Total counter -1</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── MODULE 4 — Calendar ── -->
+<section>
+  <h2>MODULE 4 — Calendar (<code>/calendar</code>) <span class="new-badge">UPDATED v1.8</span></h2>
+  <h3>4.1 Display &amp; navigation</h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>4.1.1</td><td class="desc">Load /calendar</td><td class="expected">Weekly view by default, events colored by status</td><td class="actions"></td><td></td></tr>
+      <tr><td>4.1.2</td><td class="desc">Click <strong>Mes</strong></td><td class="expected">Monthly view (Gantt)</td><td class="actions"></td><td></td></tr>
+      <tr><td>4.1.3</td><td class="desc">Navigate ‹ / › several months</td><td class="expected">Smooth navigation, "Hoy" button works</td><td class="actions"></td><td></td></tr>
+      <tr><td>4.1.4</td><td class="desc">Click an event</td><td class="expected">Side panel opens with details</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.2 Side panel — price <span class="new-badge">NEW v1.8</span></h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr class="new-test"><td>4.2.1</td><td class="desc">Click a booking that has a price (e.g. Ruta Corta 160€)</td><td class="expected">Line <strong>"Precio — 160 €"</strong> in green visible in the side panel, between Participantes and Tipo ruta</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>4.2.2</td><td class="desc">Click a booking without a price</td><td class="expected">"Precio" row is <strong>absent</strong> from the panel (no "null €")</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.3 New booking form — tour select <span class="new-badge">NEW v1.8</span></h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr class="new-test"><td>4.3.1</td><td class="desc">Click <strong>+ Nueva reserva</strong> in the calendar → Tour field</td><td class="expected">Tour select displayed (filtered by platform = Manual by default)</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>4.3.2</td><td class="desc">Change source → Viator → Tour select</td><td class="expected">"Ruta Corta (160€)" in the list</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>4.3.3</td><td class="desc">Select "Ruta Corta"</td><td class="expected">Duration and Tipo ruta auto-filled and disabled. Price field = 160€</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>4.3.4</td><td class="desc">Source = Civitatis, select "Ruta Muy Corta" with 4 participants</td><td class="expected">Price = 240€. Formula "60€ × 4 pers. = 240€" visible</td><td class="actions"></td><td></td></tr>
+      <tr><td>4.3.5</td><td class="desc">Fill in client + date → Crear reserva</td><td class="expected">Booking created, visible in the calendar</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.4 Blocked slots</h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>4.4.1</td><td class="desc">Week view, navigate to an allDay blocked day</td><td class="expected">Grey background on the full day</td><td class="actions"></td><td></td></tr>
+      <tr><td>4.4.2</td><td class="desc">Click <strong>🔒 Bloquear horario</strong> → fill in + Guardar</td><td class="expected">Slot created, visible in the calendar</td><td class="actions"></td><td></td></tr>
+      <tr><td>4.4.3</td><td class="desc">Click a blocked slot → click <strong>Eliminar bloqueo</strong></td><td class="expected">Slot deleted</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── MODULE 5 — Planning ── -->
+<section>
+  <h2>MODULE 5 — Planning (<code>/planning</code>)</h2>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>5.1</td><td class="desc">Open /planning</td><td class="expected">Table of confirmed bookings for the current month</td><td class="actions"></td><td></td></tr>
+      <tr><td>5.2</td><td class="desc">Check tour names in the Tour column</td><td class="expected">Real catalog names (Ruta Corta, Bardenas Reales, etc.) — <strong>no fake names</strong></td><td class="actions"></td><td></td></tr>
+      <tr><td>5.3</td><td class="desc">Navigate ‹ / › between months</td><td class="expected">Table updates for the selected month</td><td class="actions"></td><td></td></tr>
+      <tr><td>5.4</td><td class="desc">All-day booking "Toda la jornada"</td><td class="expected">Inicio = "☀ Jornada", Fin = "—"</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── MODULE 6 — Stats ── -->
+<section>
+  <h2>MODULE 6 — Statistics (<code>/stats</code>) <span class="new-badge">UPDATED v1.8</span></h2>
+  <h3>6.1 KPIs &amp; filters</h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>6.1.1</td><td class="desc">Open /stats</td><td class="expected">KPIs visible: Total, Confirmadas, Rate, Participants, Revenue…</td><td class="actions"></td><td></td></tr>
+      <tr><td>6.1.2</td><td class="desc">Select a month (e.g. Abril)</td><td class="expected">KPIs recalculated for April only</td><td class="actions"></td><td></td></tr>
+      <tr><td>6.1.3</td><td class="desc">Click a bar in the monthly chart</td><td class="expected">Month filter changes to the clicked month</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.2 Heatmap &amp; other blocks</h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>6.2.1</td><td class="desc">Check the annual heatmap</td><td class="expected">12 mini-calendars, days colored by activity level</td><td class="actions"></td><td></td></tr>
+      <tr><td>6.2.2</td><td class="desc">Hover a cell with bookings</td><td class="expected">Tooltip: date + number of confirmed + number of others</td><td class="actions"></td><td></td></tr>
+      <tr><td>6.2.3</td><td class="desc">"Por plataforma" block</td><td class="expected">Bars by source (Viator, GYG, Civitatis, WP, Manual) with rates</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.3 Most booked tours — platform badges <span class="new-badge">NEW v1.8</span></h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr class="new-test"><td>6.3.1</td><td class="desc">"Tours más reservados" block — check tour names</td><td class="expected">Real catalog names: "Ruta Corta", "Ruta Muy Corta", "Bardenas Reales"… (<strong>no fake names</strong>)</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>6.3.2</td><td class="desc">Inspect each row in the top tours</td><td class="expected">Under each tour name: <strong>colored platform badges</strong> (e.g. green "Viator" badge + orange "GYG" badge)</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>6.3.3</td><td class="desc">"Ruta Corta" in the top</td><td class="expected">Badges <strong>Viator</strong> (green) + <strong>GYG</strong> (orange) visible side by side</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>6.3.4</td><td class="desc">"Ruta Muy Corta" in the top</td><td class="expected"><strong>Civitatis</strong> badge (blue) only</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── MODULE 7 — Logs / Demo ── -->
+<section>
+  <h2>MODULE 7 — Logs (<code>/logs</code>) <span class="new-badge">UPDATED v1.8</span></h2>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>7.1</td><td class="desc">Open /logs — check the list</td><td class="expected">Events listed (created / confirmed / refused / deleted)</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>7.2</td><td class="desc"><span class="new-inline">UPDATED v1.8</span>Try "✦ Cargar datos de demo" <strong>without initializing the catalog</strong> (on an empty database)</td><td class="expected">Error visible: <em>"El catálogo de tours está vacío. Ve a Admin → Catálogo de tours → Inicializar catálogo primero."</em></td><td class="actions"></td><td></td></tr>
+      <tr><td>7.3</td><td class="desc">After reset + catalog init + seed: check the logs</td><td class="expected">[DEMO] log visible with correct volumes</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── MODULE 8 — Admin ── -->
+<section>
+  <h2>MODULE 8 — Administration (<code>/admin</code>) <span class="new-badge">UPDATED v1.8</span></h2>
+  <h3>8.1 Tour Catalog — initialization <span class="new-badge">NEW v1.8</span></h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr class="new-test"><td>8.1.1</td><td class="desc">Open /admin — check the "Catálogo de tours" section</td><td class="expected">Section visible, table of 14 tours displayed (after init)</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>8.1.2</td><td class="desc">On empty database (after reset): <strong>"Inicializar catálogo"</strong> button visible</td><td class="expected">Button only visible when catalog is empty</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>8.1.3</td><td class="desc">Click "Inicializar catálogo"</td><td class="expected">14 tours created, table appears: Ruta Muy Corta, Ruta Corta, Bardena Blanca, Atardecer, Bardenas Reales, Bardena Negra, Senderismo + 4x4, Las Tres Bardenas, Senderismo Media, Senderismo Larga, Bardenas y Bodega, Bardenas + Tudela, Mitos y Leyendas, Ruta Autobús</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>8.1.4</td><td class="desc">Check the tours table</td><td class="expected">Columns: Tour / Categoría / Duración / Precio / Plataformas / Activo / ✕. "por pers." badge visible on "Ruta Muy Corta"</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <h3>8.2 Tour Catalog — CRUD <span class="new-badge">NEW v1.8</span></h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr class="new-test"><td>8.2.1</td><td class="desc">Click the price of a tour (e.g. 160€ on "Ruta Corta")</td><td class="expected">Inline input appears with the current value, ✓ and ✕ buttons</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>8.2.2</td><td class="desc">Change the price → click ✓</td><td class="expected">New price shown in the table, persisted in the database</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>8.2.3</td><td class="desc">Click ✕ (cancel edit)</td><td class="expected">Price reverts to original value, field closed</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>8.2.4</td><td class="desc">Toggle <strong>Activo</strong> on a tour</td><td class="expected">Tour row drops to 40% opacity (inactive). Toggle again → tour returns to normal</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>8.2.5</td><td class="desc">Disable a tour and open the booking form → that platform</td><td class="expected">Inactive tour <strong>absent</strong> from the select in the booking form</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>8.2.6</td><td class="desc">Click ✕ (delete) on a tour → confirm</td><td class="expected">Tour deleted from the table immediately</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <h3>8.3 Tour Catalog — Add a new route <span class="new-badge">NEW v1.8</span></h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr class="new-test"><td>8.3.1</td><td class="desc">Click <strong>"+ Nueva ruta"</strong></td><td class="expected">Form opens with fields: Nombre, Categoría, Tipo de ruta, Duración, Precio, Tarificación, Orden, Plataformas</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>8.3.2</td><td class="desc">Submit without filling in Nombre → click "Crear ruta"</td><td class="expected">Button stays disabled while Nombre, Price, or Platforms are empty</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>8.3.3</td><td class="desc">Categoría field: type "fotografía"</td><td class="expected">Free value accepted. Existing categories (4x4, senderismo…) appear as suggestions but do not block</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>8.3.4</td><td class="desc">Fill all fields, select a platform → Crear ruta</td><td class="expected">New tour appears in the table, form closes</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>8.3.5</td><td class="desc">Create a 2nd tour with the same custom category ("fotografía")</td><td class="expected">"fotografía" appears in the Categoría field suggestions</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>8.3.6</td><td class="desc">Create a tour with <strong>Per person</strong> pricing (e.g. 45€/pers.)</td><td class="expected">"por pers." badge visible in the table. In the booking form, per-person formula displayed</td><td class="actions"></td><td></td></tr>
+      <tr class="new-test"><td>8.3.7</td><td class="desc">Click "Cancelar" without creating a tour</td><td class="expected">Form closes, no tour added</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <h3>8.4 Rates &amp; Themes</h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>8.4.1</td><td class="desc">Enter rates by route (e.g. 120 / 200 / 350) → Guardar tarifas</td><td class="expected">"✓ Guardado" appears. Values persisted on reload</td><td class="actions"></td><td></td></tr>
+      <tr><td>8.4.2</td><td class="desc">Change theme (e.g. Océano)</td><td class="expected">Colors change immediately, theme persisted on reload</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── MODULE 9 — Cross-cutting consistency ── -->
+<section>
+  <h2>MODULE 9 — Cross-cutting consistency</h2>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Expected</th><th>Result</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>9.1</td><td class="desc">Confirm a booking from the dashboard</td><td class="expected">Visible as confirmed in /calendar AND /planning</td><td class="actions"></td><td></td></tr>
+      <tr><td>9.2</td><td class="desc">Delete a booking from /calendar</td><td class="expected">Disappears from dashboard and planning</td><td class="actions"></td><td></td></tr>
+      <tr><td>9.3</td><td class="desc">Create a block from /calendar</td><td class="expected">Visible in the 🔒 Bloqueados tile on the dashboard</td><td class="actions"></td><td></td></tr>
+      <tr><td>9.4</td><td class="desc">/stats reflects confirmed bookings</td><td class="expected">KPIs and heatmap updated</td><td class="actions"></td><td></td></tr>
+    </tbody>
+  </table>
+</section>
+
+</main>
+
+<!-- Floating summary -->
+<div id="summary">
+  <span>✅ <strong id="cntOk">0</strong></span>
+  <span>❌ <strong id="cntFail">0</strong></span>
+  <span>⏭ <strong id="cntSkip">0</strong></span>
+  <span style="color:#64748b">/ <strong id="cntTotal">0</strong></span>
+</div>
+
+<script>
+const STORAGE_KEY = "horus-tests-v1.8";
+
+// ── Row initialization ──────────────────────────────────────────────
+function allRows() {
+  return document.querySelectorAll("tbody tr");
+}
+
+function buildRows() {
+  let idx = 0;
+  allRows().forEach(row => {
+    const tdAction = row.querySelector("td.actions");
+    const tdNote   = row.querySelector("td:last-child");
+    if (!tdAction) return;
+
+    const id = "t" + (idx++);
+    row.dataset.testId = id;
+
+    tdAction.innerHTML = `
+      <button class="action-btn ok"   data-id="${id}" data-val="ok"   title="OK">✅</button>
+      <button class="action-btn fail" data-id="${id}" data-val="fail" title="Fail">❌</button>
+      <button class="action-btn skip" data-id="${id}" data-val="skip" title="Skip">⏭</button>
+    `;
+
+    const noteArea = document.createElement("textarea");
+    noteArea.className = "note";
+    noteArea.placeholder = "Notes…";
+    noteArea.dataset.id = id;
+    tdNote.appendChild(noteArea);
+
+    tdAction.querySelectorAll(".action-btn").forEach(btn => {
+      btn.addEventListener("click", () => setResult(id, btn.dataset.val));
+    });
+    noteArea.addEventListener("input", () => saveAll());
+  });
+  updateCount();
+}
+
+function setResult(id, val) {
+  const row = document.querySelector(`[data-test-id="${id}"]`);
+  if (!row) return;
+  const prev = row.dataset.result;
+  row.dataset.result = (prev === val) ? "" : val;
+
+  row.querySelectorAll(".action-btn").forEach(btn => {
+    btn.classList.remove("active-ok","active-fail","active-skip");
+    if (btn.dataset.val === row.dataset.result) btn.classList.add("active-"+btn.dataset.val);
+  });
+
+  const note = row.querySelector("textarea.note");
+  if (row.dataset.result === "fail") note.classList.add("visible");
+  else note.classList.remove("visible");
+
+  saveAll();
+  updateCount();
+}
+
+function updateCount() {
+  const rows = [...allRows()].filter(r => r.dataset.testId);
+  const ok   = rows.filter(r => r.dataset.result === "ok").length;
+  const fail = rows.filter(r => r.dataset.result === "fail").length;
+  const skip = rows.filter(r => r.dataset.result === "skip").length;
+  document.getElementById("cntOk").textContent   = ok;
+  document.getElementById("cntFail").textContent  = fail;
+  document.getElementById("cntSkip").textContent  = skip;
+  document.getElementById("cntTotal").textContent = rows.length;
+  const done = ok + fail + skip;
+  document.getElementById("progressFill").style.width = rows.length ? (done/rows.length*100)+"%": "0%";
+}
+
+// ── localStorage persistence ────────────────────────────────────────
+function saveAll() {
+  const data = {};
+  allRows().forEach(row => {
+    if (!row.dataset.testId) return;
+    const note = row.querySelector("textarea.note");
+    data[row.dataset.testId] = { result: row.dataset.result||"", note: note ? note.value : "" };
+  });
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function loadAll() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  const data = JSON.parse(raw);
+  allRows().forEach(row => {
+    if (!row.dataset.testId) return;
+    const d = data[row.dataset.testId];
+    if (!d) return;
+    if (d.result) setResult(row.dataset.testId, d.result);
+    const note = row.querySelector("textarea.note");
+    if (note && d.note) { note.value = d.note; if (d.result==="fail") note.classList.add("visible"); }
+  });
+}
+
+function resetAll() {
+  if (!confirm("Reset all results?")) return;
+  localStorage.removeItem(STORAGE_KEY);
+  allRows().forEach(row => {
+    row.dataset.result = "";
+    row.querySelectorAll(".action-btn").forEach(b => b.classList.remove("active-ok","active-fail","active-skip"));
+    const note = row.querySelector("textarea.note");
+    if (note) { note.value = ""; note.classList.remove("visible"); }
+  });
+  updateCount();
+}
+
+// ── Export / Import JSON ────────────────────────────────────────────
+function exportJSON() {
+  const rows = [...allRows()].filter(r => r.dataset.testId);
+  const out = rows.map(row => {
+    const id = row.dataset.testId;
+    const note = row.querySelector("textarea.note");
+    const desc = row.querySelector("td.desc")?.textContent?.trim().replace(/\s+/g," ") || "";
+    const expected = row.querySelector("td.expected")?.textContent?.trim().replace(/\s+/g," ") || "";
+    return { id, desc, expected, result: row.dataset.result||"", note: note?.value||"" };
+  });
+  const blob = new Blob([JSON.stringify({ version:"1.8", date: new Date().toISOString(), tests: out }, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "test-results-v1.8.json";
+  a.click();
+}
+
+function importJSON() {
+  const input = document.createElement("input");
+  input.type = "file"; input.accept = ".json";
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        const map = {};
+        (data.tests||[]).forEach(t => { map[t.id] = t; });
+        allRows().forEach(row => {
+          if (!row.dataset.testId) return;
+          const d = map[row.dataset.testId];
+          if (!d) return;
+          if (d.result) setResult(row.dataset.testId, d.result);
+          const note = row.querySelector("textarea.note");
+          if (note && d.note) { note.value = d.note; if (d.result==="fail") note.classList.add("visible"); }
+        });
+        saveAll();
+      } catch { alert("Invalid JSON file"); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ── Boot ────────────────────────────────────────────────────────────
+buildRows();
+loadAll();
+</script>
+</body>
+</html>

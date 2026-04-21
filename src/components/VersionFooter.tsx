@@ -3,6 +3,41 @@ import { useState } from "react";
 
 const RELEASE_NOTES: { version: string; date: string; status: string; sections: { title: string; items: string[] }[] }[] = [
   {
+    version: "v1.8.1",
+    date: "2026-04-21",
+    status: "Stable",
+    sections: [
+      {
+        title: "Correcciones",
+        items: [
+          "Admin — catálogo: confirmación requerida antes de eliminar un tour (botón ✕)",
+          "Formulario reserva — los tours inactivos ya no aparecen en el selector de reserva (dashboard y calendario)",
+          "Dashboard — la fecha de reserva muestra ahora el año completo (ej: martes, 22 de abril de 2026)",
+        ],
+      },
+    ],
+  },
+  {
+    version: "v1.8",
+    date: "2026-04-20",
+    status: "Stable",
+    sections: [
+      {
+        title: "Nuevas funcionalidades",
+        items: [
+          "Admin — catálogo de tours: inicialización de 14 tours, CRUD de precio en línea, toggle activo/inactivo, eliminación, añadir ruta manual",
+          "Admin — categoría libre con autocompletado (saisie libre + suggestions basadas en los tours existentes)",
+          "Formulario reserva (dashboard + calendario) — selector de tour filtrado por plataforma; auto-rellena nombre, duración, tipo de ruta y precio",
+          "Civitatis — tarificación por persona: fórmula «60€ × N pers. = total» mostrada en tiempo real en el formulario",
+          "BookingCard — precio visible en verde en cada tarjeta; desglose por persona para Civitatis",
+          "Calendario — panel lateral: fila «Precio» visible cuando una reserva tiene precio",
+          "Stats — Tours más reservados: badges de plataforma (Viator / GYG / Civitatis…) bajo cada tour",
+          "Seed datos de demo — requiere catálogo inicializado primero; usa nombres e IDs reales del catálogo",
+        ],
+      },
+    ],
+  },
+  {
     version: "v1.7.2",
     date: "2026-04-20",
     status: "Stable",
@@ -182,7 +217,7 @@ export default function VersionFooter() {
           onClick={() => setOpen(true)}
           className="text-slate-600 text-xs hover:text-slate-400 transition-colors cursor-pointer"
         >
-          Horus v1.7.2
+          Horus v1.8.1
         </button>
       </footer>
 

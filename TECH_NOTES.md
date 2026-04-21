@@ -2,6 +2,74 @@
 
 ---
 
+## v1.8.1
+_Date: 2026-04-21_
+
+### Changes from v1.8
+
+**Admin — delete tour confirmation** (`src/app/admin/page.tsx`)
+Added `if (!window.confirm("Delete this tour?")) return;` at the top of `deleteTour()`.
+
+**Booking form tour fetch** (`src/app/page.tsx`, `src/app/calendar/page.tsx`)
+Changed `fetch("/api/tours?all=true")` to `fetch("/api/tours")` in both dashboard and calendar `useEffect`. The `?all=true` param bypasses the `active: true` filter — only the admin catalog page should use it.
+
+**Dashboard date format** (`src/components/BookingCard.tsx`)
+Replaced `toLocaleDateString` with manual template: `` `${dd}/${mm}/${yyyy} ${hh}:${mm}` ``. Day-of-week single-letter badge uses `DAY_LETTERS = ["D","L","M","X","J","V","S"]` (Spanish convention: X = miércoles to avoid M/M ambiguity). Rendered as a small `bg-slate-700` pill before the date string.
+
+**Admin — catalog full row editing** (`src/app/admin/page.tsx`)
+Replaced price-only inline edit (`editingTour` / `editPrice` / `saveTourPrice`) with full-row edit system:
+- States: `editingTourFull: string | null`, `editTourData: {...} | null`, `editCatCustomMode: boolean`
+- `startEditTour(tour)` — copies tour fields into `editTourData`, detects custom category
+- `saveTourFull(id)` — PATCHes all fields, updates local state from API response
+- `toggleEditPlatform(p)` — toggles platform in `editTourData.platforms`
+- JSX: rows wrapped in `<React.Fragment>`. Normal row has ✎ button. When `editingTourFull === tour.id`, an extra `<tr colspan=7>` expands below with a grid form (name, category, route type, duration, price, pricing mode, platforms).
+
+**Admin — category select** (`src/app/admin/page.tsx`)
+`catCustomMode` and `editCatCustomMode` booleans. `<select>` lists all known categories (standard + from existing tours) + "— Custom category —" sentinel. Selecting sentinel sets custom mode and clears category value, showing a text input with `border-amber-500/50`.
+
+**Admin — route tariffs removed** (`src/app/admin/page.tsx`)
+Removed "Tarifas por tipo de ruta" section, `routePriceSaving`/`routePriceSaved` states, `saveRoutePrices()` function, `price.route.*` settings keys from fetch/save, `settingsLoaded` state (no longer needed).
+
+**Stats — heatmap** (`src/app/stats/page.tsx`)
+`heatColor`: replaced multi-color scale (violet/orange/amber/green) with 4 blue shades: `bg-blue-900/70` / `bg-blue-700/75` / `bg-blue-500/80` / `bg-blue-400/90`. Legend updated to match. Grid changed from `grid-cols-3 sm:grid-cols-4 gap-2` to `grid-cols-4 sm:grid-cols-6 gap-1.5`; month label reduced to `text-[9px]`; container padding reduced to `py-3`.
+
+---
+
+## v1.8
+_Date: 2026-04-20_
+
+### Changes from v1.7.2
+
+**Tour model** (`prisma/schema.prisma`)
+New `Tour` model: `id`, `name`, `category`, `duration` (Int minutes), `price` (Float), `pricingMode` ("group"|"person"), `routeType`, `platforms` (JSON string array), `active` (Boolean default true), `sortOrder` (Int default 0), `createdAt`.
+
+**Tours API** (`src/app/api/tours/route.ts`, `src/app/api/tours/[id]/route.ts`)
+- `GET /api/tours` — returns active tours only (`where: { active: true }`). `?all=true` skips filter (admin use).
+- `POST /api/tours` — creates a tour. `platforms` array serialized to JSON string.
+- `POST /api/tours` (seed) — seeds 14 default catalog tours when body contains `{ seed: true }`.
+- `PATCH /api/tours/:id` — partial update, all fields optional.
+- `DELETE /api/tours/:id` — hard delete.
+
+**Booking model extension** (`prisma/schema.prisma`, `src/app/api/bookings/route.ts`)
+Added `tourId String?` foreign key (nullable, no cascade). POST `/api/bookings` accepts `tourId`.
+
+**Dashboard booking form** (`src/app/page.tsx`)
+`allTours` state. `platformTours = allTours.filter(t => JSON.parse(t.platforms).includes(source))`. `applyTour(id)` sets name/duration/routeType/price from catalog. `handleParticipantsChange` recalculates price for `pricingMode === "person"`. `__manual__` sentinel for free-text tour entry. `tourId` sent to API (null if manual).
+
+**Calendar booking form** (`src/app/calendar/page.tsx`)
+Same tour select pattern. `calPlatformTours`, `calSelectedTour`, `calIsPerPerson`, `calComputedTotal`. Side panel: price row added with `{selected.price != null && ...}`.
+
+**BookingCard price** (`src/components/BookingCard.tsx`)
+Price shown in green after notes. Per-person breakdown for Civitatis: `(price / participants)€/pers.`
+
+**Stats — top tours** (`src/app/api/stats/route.ts`, `src/app/stats/page.tsx`)
+`tourMap` uses `Set<string>` for `sources`. Output: `sources: Array.from(v.sources)`. Page: colored platform badges under each tour name.
+
+**Seed route** (`src/app/api/seed/route.ts`)
+Returns 409 if catalog empty. Loads catalog, maps bookings to real tour IDs. Civitatis: `price = perPersonPrice × participants`. Others: group price with ±10% variation.
+
+---
+
 ## v1.7.2
 _Date: 2026-04-20_
 
