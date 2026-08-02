@@ -14,7 +14,42 @@ type Tour = {
   platforms: string;
   active: boolean;
   sortOrder: number;
+  octoEnabled: boolean;
+  capacity: number;
+  startTimes: string; // JSON: ["09:00","15:00"]
 };
+
+type ApiKey = {
+  id: string;
+  name: string;
+  source: string;
+  token: string;
+  active: boolean;
+  lastUsedAt: string | null;
+  createdAt: string;
+};
+
+/** "09:00, 15:00" ↔ ["09:00","15:00"] — l'utilisateur saisit du texte, l'API veut du JSON. */
+function parseStartTimes(raw: string): string[] {
+  return Array.from(
+    new Set(
+      raw
+        .split(/[,;\s]+/)
+        .map((t) => t.trim())
+        .filter((t) => /^\d{1,2}:\d{2}$/.test(t))
+        .map((t) => (t.length === 4 ? "0" + t : t))
+    )
+  ).sort();
+}
+
+function formatStartTimes(json: string): string {
+  try {
+    const parsed = JSON.parse(json);
+    return Array.isArray(parsed) ? parsed.join(", ") : "09:00";
+  } catch {
+    return "09:00";
+  }
+}
 
 const THEMES = [
   {
@@ -131,6 +166,7 @@ export default function AdminPage() {
   const [editTourData, setEditTourData] = useState<{
     name: string; category: string; duration: string; price: string;
     pricingMode: string; routeType: string; platforms: string[]; sortOrder: string;
+    octoEnabled: boolean; capacity: string; startTimes: string;
   } | null>(null);
   const [editCatCustomMode, setEditCatCustomMode] = useState(false);
   const [deletingTour, setDeletingTour] = useState<string | null>(null);
@@ -142,6 +178,78 @@ export default function AdminPage() {
   });
   const [creatingTour, setCreatingTour] = useState(false);
   const [catCustomMode, setCatCustomMode] = useState(false);
+
+  // ── OCTO ──
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [newKeyName, setNewKeyName] = useState("");
+  const [newKeySource, setNewKeySource] = useState("civitatis");
+  const [creatingKey, setCreatingKey] = useState(false);
+  const [revealedKey, setRevealedKey] = useState<string | null>(null);
+  const [octoSaving, setOctoSaving] = useState(false);
+  const [octoSaved, setOctoSaved] = useState(false);
+
+  async function fetchApiKeys() {
+    const r = await fetch("/api/octo-keys");
+    if (r.ok) setApiKeys(await r.json());
+  }
+
+  async function createApiKey() {
+    if (!newKeyName.trim()) return;
+    setCreatingKey(true);
+
+    const r = await fetch("/api/octo-keys", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newKeyName.trim(), source: newKeySource }),
+    });
+
+    if (r.ok) {
+      const key: ApiKey = await r.json();
+      // On la met en évidence une fois : c'est le moment de la copier chez le revendeur.
+      setRevealedKey(key.id);
+      setNewKeyName("");
+      await fetchApiKeys();
+    }
+    setCreatingKey(false);
+  }
+
+  async function toggleApiKey(key: ApiKey) {
+    await fetch(`/api/octo-keys/${key.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: !key.active }),
+    });
+    await fetchApiKeys();
+  }
+
+  async function deleteApiKey(key: ApiKey) {
+    if (!window.confirm(`¿Eliminar la clave de ${key.name}? La plataforma dejará de poder vender.`)) return;
+    await fetch(`/api/octo-keys/${key.id}`, { method: "DELETE" });
+    await fetchApiKeys();
+  }
+
+  async function saveOcto() {
+    setOctoSaving(true);
+
+    const keys = [
+      "octo.supplier.name", "octo.supplier.email", "octo.supplier.telephone",
+      "octo.supplier.website", "octo.supplier.address",
+      "octo.bookingCutoffHours", "octo.cancellationCutoffHours", "octo.holdMinutes",
+    ];
+
+    const payload: Record<string, string> = {};
+    for (const k of keys) payload[k] = settings[k] ?? "";
+
+    await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    setOctoSaving(false);
+    setOctoSaved(true);
+    setTimeout(() => setOctoSaved(false), 2000);
+  }
 
   async function fetchTours() {
     const r = await fetch("/api/tours?all=true");
@@ -185,6 +293,9 @@ export default function AdminPage() {
       routeType: tour.routeType ?? "media",
       platforms,
       sortOrder: String(tour.sortOrder ?? 0),
+      octoEnabled: tour.octoEnabled ?? false,
+      capacity: String(tour.capacity ?? 8),
+      startTimes: formatStartTimes(tour.startTimes ?? '["09:00"]'),
     });
     setEditingTourFull(tour.id);
   }
@@ -204,6 +315,9 @@ export default function AdminPage() {
         routeType: editTourData.routeType,
         platforms: editTourData.platforms,
         sortOrder: Number(editTourData.sortOrder) || 0,
+        octoEnabled: editTourData.octoEnabled,
+        capacity: Number(editTourData.capacity) || 1,
+        startTimes: parseStartTimes(editTourData.startTimes),
       }),
     }).then((r) => r.json());
     setTours((prev) => prev.map((t) => t.id === id ? updated : t));
@@ -269,6 +383,7 @@ export default function AdminPage() {
       .then((r) => r.json())
       .then((data) => { setSettings(data); });
     fetchTours();
+    fetchApiKeys();
   }, []);
 
   function get(k: string, fallback = "") {
@@ -559,6 +674,49 @@ export default function AdminPage() {
                                     })}
                                   </div>
                                 </div>
+                                {/* ── Venta automática (OCTO) ── */}
+                                <div className="rounded-lg border border-teal-500/30 bg-teal-500/5 px-3 py-3 space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="text-teal-300 text-sm font-semibold">🔌 Venta automática (OCTO)</p>
+                                      <p className="text-slate-500 text-xs mt-0.5">
+                                        Las plataformas conectadas venden este tour directamente, sin tu validación.
+                                      </p>
+                                    </div>
+                                    <button type="button"
+                                      onClick={() => setEditTourData((p) => p ? { ...p, octoEnabled: !p.octoEnabled } : p)}
+                                      className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ml-4 ${editTourData.octoEnabled ? "bg-teal-500" : "bg-slate-600"}`}
+                                    >
+                                      <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${editTourData.octoEnabled ? "translate-x-5" : ""}`} />
+                                    </button>
+                                  </div>
+
+                                  {editTourData.octoEnabled && (
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <div>
+                                        <label className="text-xs text-slate-400 block mb-1">Plazas por salida</label>
+                                        <input type="number" min="1" step="1" value={editTourData.capacity}
+                                          onChange={(e) => setEditTourData((p) => p ? { ...p, capacity: e.target.value } : p)}
+                                          className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-xs text-slate-400 block mb-1">Horas de salida</label>
+                                        <input type="text" value={editTourData.startTimes}
+                                          onChange={(e) => setEditTourData((p) => p ? { ...p, startTimes: e.target.value } : p)}
+                                          placeholder="09:00, 15:00"
+                                          className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white font-mono"
+                                        />
+                                      </div>
+                                      {editTourData.pricingMode === "group" && (
+                                        <p className="col-span-2 text-amber-400/80 text-xs">
+                                          ⚠ Tarifa por grupo: la plataforma venderá el tour entero de una vez (1 sola reserva de {editTourData.capacity} plazas máx.).
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+
                                 {/* Actions */}
                                 <div className="flex items-center gap-3 pt-1">
                                   <button onClick={() => saveTourFull(tour.id)} disabled={isSaving || !editTourData.name || !editTourData.price || editTourData.platforms.length === 0}
@@ -613,7 +771,7 @@ export default function AdminPage() {
                     {Array.from(new Set(["4x4", "senderismo", "cultural", "autobus", "platform", ...tours.map((t) => t.category)])).map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
-                    <option value="__custom__">— Entrar manualmente categoría —</option>
+                    <option value="__custom__">— Escribir categoría —</option>
                   </select>
                   {catCustomMode && (
                     <input
@@ -938,6 +1096,169 @@ export default function AdminPage() {
           <span className="font-mono">/api/webhooks/…</span>) están en desarrollo (cf. Backlog INT1–INT4).
           La configuración anterior estará activa una vez desplegadas estas integraciones.
         </p>
+      </div>
+
+      {/* ── Conexión OCTO ── */}
+      <div className="rounded-xl border border-teal-500/30 bg-slate-800/60 overflow-hidden">
+        <div className="px-5 py-4 bg-teal-500/10 border-b border-teal-500/30">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">🔌</span>
+            <div>
+              <span className="font-bold text-sm text-teal-300">Conexión OCTO</span>
+              <p className="text-slate-400 text-xs mt-0.5">
+                Estándar abierto usado por Civitatis, Viator, GetYourGuide, Klook…
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-5 py-4 space-y-5">
+          {/* Avertissement : le modèle change */}
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-2.5">
+            <p className="text-amber-300/90 text-xs leading-relaxed">
+              <span className="font-semibold">⚠ Venta directa.</span> Las plataformas conectadas
+              consultan tu disponibilidad y venden solas: ya no aceptas ni rechazas esas reservas.
+              Solo se venden los tours marcados <span className="text-teal-300">Venta automática</span> en el catálogo.
+            </p>
+          </div>
+
+          {/* URL de base */}
+          <div>
+            <label className="block text-slate-400 text-xs font-medium mb-1.5">
+              URL base de la API <span className="text-slate-600 font-normal">(a comunicar a la plataforma)</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <input readOnly value={`${origin}/api/octo`}
+                className="flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-xs font-mono text-slate-300 cursor-default"
+              />
+              <button onClick={() => copyToClipboard(`${origin}/api/octo`, "octo-url")}
+                className="shrink-0 px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-xs text-slate-300 transition-colors"
+              >{copied === "octo-url" ? "✓ Copiado" : "Copiar"}</button>
+            </div>
+          </div>
+
+          {/* Identité fournisseur */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {([
+              ["octo.supplier.name", "Nombre comercial", "Horus Tours"],
+              ["octo.supplier.email", "Email de contacto", "contacto@ejemplo.com"],
+              ["octo.supplier.telephone", "Teléfono", "+34 600 000 000"],
+              ["octo.supplier.website", "Sitio web", "https://…"],
+            ] as const).map(([k, label, ph]) => (
+              <div key={k}>
+                <label className="block text-slate-400 text-xs font-medium mb-1.5">{label}</label>
+                <input type="text" value={get(k)} onChange={(e) => set(k, e.target.value)} placeholder={ph}
+                  className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-sm text-slate-300 placeholder-slate-600"
+                />
+              </div>
+            ))}
+            <div className="sm:col-span-2">
+              <label className="block text-slate-400 text-xs font-medium mb-1.5">Dirección</label>
+              <input type="text" value={get("octo.supplier.address")} onChange={(e) => set("octo.supplier.address", e.target.value)}
+                placeholder="Calle, ciudad, país"
+                className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-sm text-slate-300 placeholder-slate-600"
+              />
+            </div>
+          </div>
+
+          {/* Règles de vente — les valeurs par défaut sont pré-remplies, jamais de champ vide :
+              un champ vide enregistré mettait la durée de blocage à 0 et empêchait toute vente. */}
+          <div className="grid grid-cols-3 gap-3">
+            {([
+              ["octo.bookingCutoffHours", "Cierre de venta", "2", "h antes de la salida"],
+              ["octo.cancellationCutoffHours", "Límite de cancelación", "24", "h antes de la salida"],
+              ["octo.holdMinutes", "Duración del bloqueo", "30", "min para pagar"],
+            ] as const).map(([k, label, def, hint]) => (
+              <div key={k}>
+                <label className="block text-slate-400 text-xs font-medium mb-1.5">{label}</label>
+                <input type="number" min={k === "octo.holdMinutes" ? "1" : "0"}
+                  value={get(k, def)}
+                  onChange={(e) => set(k, e.target.value)}
+                  onBlur={(e) => { if (!e.target.value.trim()) set(k, def); }}
+                  className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-sm text-slate-300"
+                />
+                <p className="text-slate-600 text-[10px] mt-1">{hint}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-end">
+            <button onClick={saveOcto} disabled={octoSaving}
+              className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${octoSaved ? "bg-emerald-600 text-white" : "bg-amber-500 hover:bg-amber-400 text-black"}`}
+            >{octoSaving ? "Guardando…" : octoSaved ? "✓ Guardado" : "Guardar"}</button>
+          </div>
+
+          {/* Clés revendeur */}
+          <div className="border-t border-slate-700 pt-4">
+            <p className="text-slate-300 text-sm font-medium mb-1">Claves de revendedor</p>
+            <p className="text-slate-500 text-xs mb-3">
+              Una clave por plataforma: revocar Civitatis no corta Viator.
+            </p>
+
+            {apiKeys.length > 0 && (
+              <div className="space-y-2 mb-3">
+                {apiKeys.map((k) => (
+                  <div key={k.id} className="rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2.5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-200 text-sm font-medium truncate">{k.name}</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${k.active ? "bg-emerald-500/20 text-emerald-400" : "bg-slate-700 text-slate-500"}`}>
+                            {k.active ? "Activa" : "Revocada"}
+                          </span>
+                        </div>
+                        <p className="text-slate-600 text-[11px] mt-0.5">
+                          {k.lastUsedAt ? `Último uso: ${new Date(k.lastUsedAt).toLocaleString("es-ES")}` : "Nunca usada"}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button onClick={() => toggleApiKey(k)}
+                          className="px-2.5 py-1 rounded bg-slate-700 hover:bg-slate-600 text-xs text-slate-300 transition-colors"
+                        >{k.active ? "Revocar" : "Reactivar"}</button>
+                        <button onClick={() => deleteApiKey(k)}
+                          className="px-2 py-1 rounded text-slate-500 hover:text-rose-400 text-xs transition-colors"
+                        >✕</button>
+                      </div>
+                    </div>
+
+                    {/* Le token n'est mis en clair qu'à la création — après, il reste masqué. */}
+                    {revealedKey === k.id ? (
+                      <div className="mt-2 flex items-center gap-2">
+                        <input readOnly value={k.token}
+                          className="flex-1 bg-slate-950 border border-teal-500/40 rounded px-2 py-1 text-[11px] font-mono text-teal-300"
+                        />
+                        <button onClick={() => copyToClipboard(k.token, "key-" + k.id)}
+                          className="shrink-0 px-2.5 py-1 rounded bg-teal-600 hover:bg-teal-500 text-xs text-white transition-colors"
+                        >{copied === "key-" + k.id ? "✓" : "Copiar"}</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setRevealedKey(k.id)}
+                        className="mt-1.5 text-slate-600 hover:text-slate-400 text-[11px] font-mono transition-colors"
+                      >••••••••••••••••  mostrar</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <input type="text" value={newKeyName} onChange={(e) => setNewKeyName(e.target.value)}
+                placeholder="Nombre del revendedor (ej: Civitatis)"
+                className="flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-sm text-slate-300 placeholder-slate-600"
+              />
+              <select value={newKeySource} onChange={(e) => setNewKeySource(e.target.value)}
+                className="bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-sm text-slate-300"
+              >
+                {SOURCES.map((s) => (
+                  <option key={s.id} value={s.id}>{s.label}</option>
+                ))}
+              </select>
+              <button onClick={createApiKey} disabled={creatingKey || !newKeyName.trim()}
+                className="shrink-0 px-3 py-1.5 rounded bg-teal-600 hover:bg-teal-500 text-sm text-white font-medium transition-colors disabled:opacity-40"
+              >{creatingKey ? "…" : "Generar"}</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

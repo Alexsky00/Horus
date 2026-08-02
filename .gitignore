@@ -4,6 +4,7 @@ node_modules/
 # Build Next.js
 .next/
 out/
+tsconfig.tsbuildinfo
 
 # Variables d'environnement (NE JAMAIS commit le .env !)
 .env

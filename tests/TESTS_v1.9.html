@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Horus v1.9 — Test Suite</title>
+<style>
+  :root{--bg:#0f172a;--surface:#1e293b;--surface2:#334155;--border:#475569;--text:#e2e8f0;--muted:#94a3b8;--accent:#f59e0b;--teal:#2dd4bf;--ok:#22c55e;--ko:#ef4444;--skip:#64748b;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5;padding:24px 16px 80px;}
+  .wrap{max-width:980px;margin:0 auto;}
+  h1{font-size:1.6rem;margin:0 0 4px;}
+  h2{font-size:1.05rem;margin:32px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border);color:var(--accent);}
+  .sub{color:var(--muted);font-size:.9rem;margin-bottom:20px;}
+  .whatsnew{background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.35);border-radius:12px;padding:16px 18px;margin-bottom:24px;}
+  .whatsnew h3{margin:0 0 8px;color:var(--teal);font-size:1rem;}
+  .whatsnew ul{margin:0;padding-left:20px;}
+  .whatsnew li{margin-bottom:5px;font-size:.88rem;}
+  .warn{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.4);border-radius:10px;padding:12px 16px;margin-bottom:24px;font-size:.87rem;color:#fcd34d;}
+  .bar{position:sticky;top:0;z-index:10;background:var(--bg);padding:12px 0;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;}
+  button{background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:7px 13px;font-size:.85rem;cursor:pointer;font-family:inherit;}
+  button:hover{background:var(--border);}
+  .stats{margin-left:auto;font-size:.85rem;color:var(--muted);display:flex;gap:14px;}
+  .stats b{color:var(--text);}
+  .test{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+  .test.ok{border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.05);}
+  .test.ko{border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.06);}
+  .test.skip{opacity:.55;}
+  .thead{display:flex;gap:10px;align-items:flex-start;}
+  .tid{font-family:ui-monospace,monospace;font-size:.75rem;color:var(--accent);background:rgba(245,158,11,.12);padding:2px 7px;border-radius:5px;flex-shrink:0;margin-top:2px;}
+  .tbody{flex:1;min-width:0;}
+  .tt{font-weight:600;font-size:.93rem;margin-bottom:3px;}
+  .td{color:var(--muted);font-size:.85rem;white-space:pre-wrap;}
+  .exp{color:var(--teal);font-size:.83rem;margin-top:6px;}
+  .exp::before{content:"→ Expected: ";opacity:.7;}
+  .tag{display:inline-block;font-size:.66rem;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:6px;vertical-align:middle;}
+  .tag.new{background:var(--teal);color:#062c28;}
+  .tag.upd{background:var(--accent);color:#3b2400;}
+  .acts{display:flex;gap:6px;flex-shrink:0;}
+  .acts button{padding:5px 10px;font-size:.95rem;line-height:1;}
+  .acts button.on[data-v="ok"]{background:var(--ok);border-color:var(--ok);color:#03230f;}
+  .acts button.on[data-v="ko"]{background:var(--ko);border-color:var(--ko);color:#fff;}
+  .acts button.on[data-v="skip"]{background:var(--skip);border-color:var(--skip);}
+  textarea{width:100%;margin-top:9px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:7px 9px;font-family:inherit;font-size:.83rem;resize:vertical;min-height:36px;display:none;}
+  textarea.show{display:block;}
+  code{background:var(--bg);padding:1px 5px;border-radius:4px;font-size:.85em;font-family:ui-monospace,monospace;color:var(--teal);}
+  @media print{.bar,.acts{display:none;}body{background:#fff;color:#000;}.test{break-inside:avoid;border-color:#ccc;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Horus v1.9 — Test Suite</h1>
+  <div class="sub">OCTO connectivity — automatic selling. Status: <b>Beta</b> · Date: 2026-07-11</div>
+
+  <div class="whatsnew">
+    <h3>⚡ What's new in v1.9</h3>
+    <ul>
+      <li><b>OCTO connectivity.</b> Horus now exposes the open standard API used by Civitatis, Viator, GetYourGuide and Klook. Platforms read your availability and sell directly.</li>
+      <li><b>Availability engine.</b> One tour at a time, but several customers can join the same departure until seats run out.</li>
+      <li><b>Admin → Conexión OCTO.</b> Supplier identity, sale cutoff, cancellation cutoff, hold duration, and one API key per reseller.</li>
+      <li><b>Catalogue → per tour.</b> Toggle "Venta automática", seats per departure, departure times.</li>
+      <li><b>Anti-double-booking hardened.</b> Platform holds now block the slot — previously only confirmed bookings did.</li>
+      <li><b>Platform bookings are protected.</b> They can no longer be refused or deleted from Horus.</li>
+    </ul>
+  </div>
+
+  <div class="warn">
+    <b>⚠ Important — the model changes.</b> A tour with "Venta automática" enabled is sold by the platform <i>without your approval</i>. You no longer accept or reject those bookings; you are notified once the sale is done. Only tours you explicitly enable are affected — everything else keeps working exactly as before.
+  </div>
+
+  <div class="bar">
+    <button onclick="exportJson()">⬇ Export JSON</button>
+    <button onclick="document.getElementById('imp').click()">⬆ Import</button>
+    <input type="file" id="imp" accept=".json" style="display:none" onchange="importJson(event)">
+    <button onclick="window.print()">🖨 Print</button>
+    <button onclick="resetAll()">↺ Reset</button>
+    <div class="stats">
+      <span>✅ <b id="c-ok">0</b></span>
+      <span>❌ <b id="c-ko">0</b></span>
+      <span>⏭ <b id="c-skip">0</b></span>
+      <span><b id="c-todo">0</b> left</span>
+    </div>
+  </div>
+
+  <div id="tests"></div>
+</div>
+
+<script>
+const TESTS = [
+  { s: "1. Regression — nothing broken", items: [
+    { id:"1.1", t:"Dashboard loads", d:"Open the dashboard.", e:"Bookings list, tiles and filters display as before." },
+    { id:"1.2", t:"Create a booking manually", d:"Use « + Nueva reserva », fill everything in, submit.", e:"Booking created, appears in the list as Pendiente." },
+    { id:"1.3", t:"Accept / reject a manual booking", d:"On a pending booking created by hand, click Aceptar, then reject another one.", e:"Status changes, push notification received." },
+    { id:"1.4", t:"Calendar and Planning", d:"Open the calendar (month / week / day) and the planning page.", e:"Bookings and blocked slots display correctly." },
+    { id:"1.5", t:"Stats", d:"Open the stats page.", e:"Heatmap and bar chart render, filters work." },
+    { id:"1.6", t:"Existing double-booking protection", d:"Try to confirm two overlapping bookings on the same slot.", e:"The second one is refused with a conflict message." },
+  ]},
+
+  { s: "2. Admin — OCTO configuration", n:true, items: [
+    { id:"2.1", t:"The « Conexión OCTO » section exists", n:true, d:"Open Admin and scroll to the bottom.", e:"A teal « 🔌 Conexión OCTO » panel is visible, with an orange warning about direct selling." },
+    { id:"2.2", t:"Base API URL", n:true, d:"Look at the « URL base de la API » field and click Copiar.", e:"It shows <code>&lt;your-domain&gt;/api/octo</code> and copies to the clipboard." },
+    { id:"2.3", t:"Supplier identity", n:true, d:"Fill in name, email, phone, website, address. Click Guardar.", e:"Button turns green « ✓ Guardado ». Reload the page: the values are still there." },
+    { id:"2.4", t:"Selling rules", n:true, d:"Set sale cutoff = 2h, cancellation cutoff = 24h, hold = 30 min. Save.", e:"Saved and persisted after reload." },
+    { id:"2.5", t:"Generate a reseller key", n:true, d:"Type « Civitatis », pick the platform, click Generar.", e:"The key appears in clear text once, starting with <code>hor_</code>, with a Copiar button." },
+    { id:"2.6", t:"The key is hidden again", n:true, d:"Reload the Admin page.", e:"The key shows as ••••• with a « mostrar » link — not in clear text by default." },
+    { id:"2.7", t:"Revoke and reactivate", n:true, d:"Click Revocar, then Reactivar.", e:"The badge switches between « Activa » and « Revocada »." },
+    { id:"2.8", t:"Delete a key", n:true, d:"Click ✕ on a key.", e:"A confirmation is requested before deleting." },
+  ]},
+
+  { s: "3. Catalogue — enabling a tour for automatic selling", n:true, items: [
+    { id:"3.1", t:"OCTO block in the edit form", n:true, d:"Admin → Catálogo → ✎ on any tour.", e:"A teal « 🔌 Venta automática (OCTO) » block appears, toggle OFF by default." },
+    { id:"3.2", t:"Enabling reveals the settings", n:true, d:"Turn the toggle ON.", e:"« Plazas por salida » and « Horas de salida » fields appear." },
+    { id:"3.3", t:"Configure and save", n:true, d:"Pick a per-person tour. Set capacity 8, departure times « 09:00, 15:00 ». Save, then reopen ✎.", e:"Values persisted correctly." },
+    { id:"3.4", t:"Warning on group pricing", n:true, d:"Enable OCTO on a tour priced « Por grupo ».", e:"An amber warning explains the whole tour is sold in one go." },
+    { id:"3.5", t:"Off by default", n:true, d:"Check the other tours in the catalogue.", e:"No tour is exposed unless you explicitly enabled it." },
+  ]},
+
+  { s: "4. OCTO API — reading (use the key from 2.5)", n:true, items: [
+    { id:"4.1", t:"No token is rejected", n:true, d:"<code>curl &lt;url&gt;/api/octo/supplier</code>", e:"HTTP 401, <code>{\"error\":\"UNAUTHORIZED\"}</code>" },
+    { id:"4.2", t:"Bad token is rejected", n:true, d:"Same call with <code>Authorization: Bearer wrong</code>", e:"HTTP 403, <code>{\"error\":\"FORBIDDEN\"}</code>" },
+    { id:"4.3", t:"Supplier identity", n:true, d:"<code>GET /api/octo/supplier</code> with the valid key.", e:"HTTP 200 with the name/email/phone entered in 2.3." },
+    { id:"4.4", t:"Product catalogue", n:true, d:"<code>GET /api/octo/products</code>", e:"Only the tour enabled in 3.3 is listed. Its option shows <code>availabilityLocalStartTimes: [\"09:00\",\"15:00\"]</code>." },
+    { id:"4.5", t:"Prices in cents", n:true, d:"Look at <code>units[0].pricing</code> (send header <code>Octo-Capabilities: octo/pricing</code>).", e:"A €60 tour shows <code>retail: 6000</code> with <code>currencyPrecision: 2</code>." },
+    { id:"4.6", t:"Unknown product", n:true, d:"<code>GET /api/octo/products/nonsense</code>", e:"HTTP 400, <code>INVALID_PRODUCT_ID</code>, and the response echoes the bad id." },
+    { id:"4.7", t:"Availability", n:true, d:"<code>POST /api/octo/availability</code> with productId, optionId DEFAULT and a date range.", e:"Two slots per day (09:00 and 15:00), each with an <code>availabilityId</code>, <code>vacancies: 8</code>." },
+  ]},
+
+  { s: "5. The availability engine — the important part", n:true, items: [
+    { id:"5.1", t:"A manual booking closes the slot", n:true, d:"Create a booking by hand in Horus at 09:00 on a given day, and confirm it. Then query OCTO availability for that day.", e:"The 09:00 slot is no longer available to the platform." },
+    { id:"5.2", t:"A blocked slot closes the day", n:true, d:"Block a full day in the calendar. Query availability for it.", e:"<code>status: \"CLOSED\"</code>, <code>available: false</code>." },
+    { id:"5.3", t:"Shared departure", n:true, d:"Via OCTO, book 3 seats at 09:00. Re-query availability for that slot.", e:"<code>vacancies</code> drops from 8 to 5 — the departure is not closed, it fills up." },
+    { id:"5.4", t:"Overselling is refused", n:true, d:"Try to book 6 more seats on the same departure (only 5 left).", e:"HTTP 400 <code>UNPROCESSABLE_ENTITY</code>, and the error states the 5 remaining seats." },
+    { id:"5.5", t:"Full departure", n:true, d:"Book the remaining 5 seats, then re-query.", e:"<code>status: \"SOLD_OUT\"</code>, <code>vacancies: 0</code>." },
+    { id:"5.6", t:"One tour at a time (critical)", n:true, d:"Enable a SECOND tour on OCTO whose departure overlaps the first (e.g. 10:00 for 3h vs 09:00 for 2h). Sell a seat on the first. Query availability on the second.", e:"The second tour becomes <code>CLOSED</code> — the guide is already busy. This is what prevents cross-platform overbooking." },
+    { id:"5.7", t:"Non-overlapping slot stays open", n:true, d:"Check the 15:00 slot of the first tour after selling 09:00.", e:"Still <code>AVAILABLE</code> with full capacity." },
+    { id:"5.8", t:"Sale cutoff", n:true, d:"Query availability for today, for a departure time already past (or under 2h away).", e:"<code>status: \"CLOSED\"</code>." },
+    { id:"5.9", t:"Winter time", n:true, d:"Query availability for a date in January.", e:"<code>availabilityId</code> ends with <code>+01:00</code> (not +02:00) — daylight saving is handled." },
+  ]},
+
+  { s: "6. OCTO API — booking lifecycle", n:true, items: [
+    { id:"6.1", t:"Hold creation", n:true, d:"<code>POST /api/octo/bookings</code> with an availabilityId and 2 unitItems.", e:"<code>status: \"ON_HOLD\"</code>, <code>utcExpiresAt</code> set ~30 min out, a <code>supplierReference</code> generated." },
+    { id:"6.2", t:"No push on hold", n:true, d:"Check your phone after 6.1.", e:"NO notification — a hold is transient, you are not disturbed." },
+    { id:"6.3", t:"The hold appears in Horus", n:true, d:"Open the Horus dashboard.", e:"The booking is visible, guest name still empty (« — »): the customer has not paid yet." },
+    { id:"6.4", t:"Idempotency", n:true, d:"Replay the exact same POST with the same <code>uuid</code>.", e:"The SAME booking is returned — no duplicate is created." },
+    { id:"6.5", t:"Confirmation", n:true, d:"<code>POST /api/octo/bookings/{uuid}/confirm</code> with a contact (firstName, lastName, emailAddress).", e:"<code>status: \"CONFIRMED\"</code>, <code>utcExpiresAt: null</code>." },
+    { id:"6.6", t:"Push on confirmation", n:true, d:"Check your phone.", e:"Notification « Reserva confirmada [CIVITATIS] » with the customer name and tour." },
+    { id:"6.7", t:"The customer appears in Horus", n:true, d:"Refresh the dashboard.", e:"The booking now shows the real customer name, email, phone — and is Confirmada." },
+    { id:"6.8", t:"Cannot be rejected from Horus", n:true, d:"Try to reject that booking from the dashboard.", e:"Refused with a message saying it must be cancelled from the platform." },
+    { id:"6.9", t:"Cannot be deleted from Horus", n:true, d:"Try to delete it.", e:"Refused, same reasoning." },
+    { id:"6.10", t:"Extend a hold", n:true, d:"Create a new hold, then <code>POST /bookings/{uuid}/extend</code>.", e:"<code>utcExpiresAt</code> pushed further out." },
+    { id:"6.11", t:"Cannot extend a confirmed booking", n:true, d:"Call extend on the booking confirmed in 6.5.", e:"HTTP 400 <code>UNPROCESSABLE_ENTITY</code>." },
+    { id:"6.12", t:"Move a booking", n:true, d:"<code>PATCH /bookings/{uuid}</code> with the 15:00 availabilityId.", e:"The booking moves to 15:00, and Horus shows the new time." },
+    { id:"6.13", t:"Cancellation", n:true, d:"<code>POST /bookings/{uuid}/cancel</code> with a reason.", e:"<code>status: \"CANCELLED\"</code>, push notification received, the reason is kept." },
+    { id:"6.14", t:"Cancelling frees the seats", n:true, d:"Re-query the availability of that departure.", e:"The seats are back on sale." },
+    { id:"6.15", t:"Hold expiry", n:true, d:"Set hold = 1 min in Admin, create a hold, wait 2 min, then reload the dashboard and query availability.", e:"The hold no longer blocks anything, the seats are sellable again." },
+  ]},
+
+  { s: "7. Cross-checks — the whole point", n:true, items: [
+    { id:"7.1", t:"A platform hold blocks the manual form", u:true, d:"Create an OCTO hold at 09:00. Then, in Horus, try to create AND confirm a manual booking overlapping 09:00.", e:"Refused with a conflict — Horus no longer resells a slot a platform is in the middle of selling. (Before v1.9, this was possible.)" },
+    { id:"7.2", t:"A confirmed OCTO sale appears everywhere", n:true, d:"After 6.5, check the dashboard, the calendar and the planning page.", e:"The booking is visible in all three views with the right time and customer." },
+    { id:"7.3", t:"Disabling a tour hides it immediately", n:true, d:"Turn « Venta automática » OFF on the tour, then call <code>GET /api/octo/products</code>.", e:"The tour is gone from the catalogue — the platform can no longer sell it." },
+    { id:"7.4", t:"Revoked key stops selling", n:true, d:"Revoke the key in Admin, then retry any OCTO call.", e:"HTTP 403 FORBIDDEN." },
+  ]},
+];
+
+const KEY = "horus-tests-v1.9";
+let state = JSON.parse(localStorage.getItem(KEY) || "{}");
+
+function render() {
+  const root = document.getElementById("tests");
+  root.innerHTML = "";
+  TESTS.forEach(sec => {
+    const h = document.createElement("h2");
+    h.innerHTML = sec.s + (sec.n ? '<span class="tag new">NEW v1.9</span>' : "");
+    root.appendChild(h);
+    sec.items.forEach(t => {
+      const st = state[t.id] || {};
+      const d = document.createElement("div");
+      d.className = "test" + (st.v ? " " + st.v : "");
+      d.innerHTML = `
+        <div class="thead">
+          <span class="tid">${t.id}</span>
+          <div class="tbody">
+            <div class="tt">${t.t}${t.n ? '<span class="tag new">NEW</span>' : ""}${t.u ? '<span class="tag upd">UPDATED</span>' : ""}</div>
+            <div class="td">${t.d}</div>
+            <div class="exp">${t.e}</div>
+          </div>
+          <div class="acts">
+            <button data-v="ok"   class="${st.v==="ok"?"on":""}"   onclick="mark('${t.id}','ok')">✅</button>
+            <button data-v="ko"   class="${st.v==="ko"?"on":""}"   onclick="mark('${t.id}','ko')">❌</button>
+            <button data-v="skip" class="${st.v==="skip"?"on":""}" onclick="mark('${t.id}','skip')">⏭</button>
+          </div>
+        </div>
+        <textarea class="${st.n||st.v==="ko"?"show":""}" placeholder="Notes / what actually happened…"
+          oninput="note('${t.id}', this.value)">${st.n||""}</textarea>`;
+      root.appendChild(d);
+    });
+  });
+  stats();
+}
+
+function mark(id, v) {
+  state[id] = state[id] || {};
+  state[id].v = state[id].v === v ? null : v;
+  save(); render();
+}
+function note(id, v) {
+  state[id] = state[id] || {};
+  state[id].n = v;
+  save(); stats();
+}
+function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
+
+function stats() {
+  const all = TESTS.flatMap(s => s.items);
+  const c = v => all.filter(t => (state[t.id]||{}).v === v).length;
+  document.getElementById("c-ok").textContent = c("ok");
+  document.getElementById("c-ko").textContent = c("ko");
+  document.getElementById("c-skip").textContent = c("skip");
+  document.getElementById("c-todo").textContent = all.length - c("ok") - c("ko") - c("skip");
+}
+
+function exportJson() {
+  const all = TESTS.flatMap(s => s.items);
+  const data = {
+    version: "v1.9",
+    exportedAt: new Date().toISOString(),
+    summary: {
+      total: all.length,
+      passed: all.filter(t => (state[t.id]||{}).v === "ok").length,
+      failed: all.filter(t => (state[t.id]||{}).v === "ko").length,
+      skipped: all.filter(t => (state[t.id]||{}).v === "skip").length,
+    },
+    results: all.map(t => ({
+      id: t.id, title: t.t,
+      result: (state[t.id]||{}).v || "not tested",
+      notes: (state[t.id]||{}).n || "",
+    })),
+  };
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type:"application/json"}));
+  a.download = "test-results-v1.9.json";
+  a.click();
+}
+
+function importJson(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      state = {};
+      (d.results||[]).forEach(x => {
+        if (x.result && x.result !== "not tested") state[x.id] = { v: x.result, n: x.notes || "" };
+        else if (x.notes) state[x.id] = { n: x.notes };
+      });
+      save(); render();
+    } catch { alert("Invalid JSON file."); }
+  };
+  r.readAsText(f);
+}
+
+function resetAll() {
+  if (!confirm("Clear all results?")) return;
+  state = {}; save(); render();
+}
+
+render();
+</script>
+</body>
+</html>

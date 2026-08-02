@@ -3,6 +3,31 @@ import { useState } from "react";
 
 const RELEASE_NOTES: { version: string; date: string; status: string; sections: { title: string; items: string[] }[] }[] = [
   {
+    version: "v1.9",
+    date: "2026-07-11",
+    status: "Beta",
+    sections: [
+      {
+        title: "Conexión OCTO — venta automática",
+        items: [
+          "Horus expone la API estándar OCTO: las plataformas (Civitatis, Viator, GetYourGuide, Klook…) consultan tu disponibilidad y venden solas, sin introducción manual",
+          "Motor de disponibilidad: un solo tour a la vez, pero varias personas pueden unirse a la misma salida hasta agotar las plazas",
+          "Admin — Conexión OCTO: identidad del proveedor, cierre de venta, límite de cancelación, duración del bloqueo",
+          "Admin — claves de revendedor: una clave por plataforma, revocable de forma independiente",
+          "Catálogo — por tour: activar la venta automática, plazas por salida y horas de salida",
+          "Notificación push al confirmarse una venta y al cancelarse",
+        ],
+      },
+      {
+        title: "Correcciones",
+        items: [
+          "Anti-doble-reserva: los bloqueos temporales de las plataformas (ON_HOLD) ya cuentan como ocupación — antes solo contaban las reservas confirmadas",
+          "Las reservas vendidas por una plataforma ya no pueden rechazarse ni eliminarse desde Horus (deben cancelarse en la plataforma)",
+        ],
+      },
+    ],
+  },
+  {
     version: "v1.8.1",
     date: "2026-04-21",
     status: "Stable",
@@ -217,7 +242,7 @@ export default function VersionFooter() {
           onClick={() => setOpen(true)}
           className="text-slate-600 text-xs hover:text-slate-400 transition-colors cursor-pointer"
         >
-          Horus v1.8.1
+          Horus v1.9
         </button>
       </footer>
 

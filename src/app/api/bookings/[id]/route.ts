@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendPushToAll, sendEmailFallback } from "@/lib/push";
 import { writeLog } from "@/lib/log";
+import { occupyingBookingsWhere } from "@/lib/occupancy";
 
 // PATCH /api/bookings/:id — accepter ou refuser une réservation
 export async function PATCH(
@@ -20,6 +21,19 @@ export async function PATCH(
     return NextResponse.json({ error: "Réservation introuvable" }, { status: 404 });
   }
 
+  // Une réservation née d'OCTO a déjà été vendue et encaissée par la plateforme.
+  // Le guide n'a pas autorité pour la refuser depuis Horus : l'annulation doit
+  // partir du revendeur, sinon Horus et la plateforme divergent en silence.
+  if (existing.octoUuid) {
+    return NextResponse.json(
+      {
+        error:
+          "Esta reserva viene de una plataforma conectada (OCTO). Debe cancelarse desde la plataforma, no desde Horus.",
+      },
+      { status: 409 }
+    );
+  }
+
   // Anti double-booking : si on veut confirmer, cherche un chevauchement de créneau
   if (status === "confirmed") {
     const dayStart = new Date(existing.date);
@@ -28,7 +42,11 @@ export async function PATCH(
     dayEnd.setHours(23, 59, 59, 999);
 
     const confirmedThatDay = await prisma.booking.findMany({
-      where: { status: "confirmed", id: { not: id }, date: { gte: dayStart, lte: dayEnd } },
+      where: {
+        ...occupyingBookingsWhere(),
+        id: { not: id },
+        date: { gte: dayStart, lte: dayEnd },
+      },
     });
 
     const thisStart = existing.date.getTime();
@@ -82,6 +100,19 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   const booking = await prisma.booking.findUnique({ where: { id: params.id } });
+
+  // Supprimer une réservation OCTO la ferait disparaître d'Horus alors que la
+  // plateforme continuerait de la croire valide — et le client se présenterait.
+  if (booking?.octoUuid) {
+    return NextResponse.json(
+      {
+        error:
+          "Esta reserva viene de una plataforma conectada (OCTO). Debe cancelarse desde la plataforma, no eliminarse aquí.",
+      },
+      { status: 409 }
+    );
+  }
+
   await prisma.booking.delete({ where: { id: params.id } });
   if (booking) {
     await writeLog("deleted", params.id, `${booking.guestName} — ${booking.tourName} — ${booking.date.toLocaleDateString("es-ES")}`);

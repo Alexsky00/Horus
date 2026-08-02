@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { invalidateOctoConfig } from "@/lib/octo/config";
 
 export const dynamic = "force-dynamic";
 
@@ -16,5 +17,10 @@ export async function POST(req: Request) {
     prisma.setting.upsert({ where: { key }, update: { value }, create: { key, value } })
   );
   await prisma.$transaction(ops);
+
+  // La config OCTO est mise en cache pour tenir les SLA des plateformes :
+  // sans ça, un réglage modifié ici mettrait 30 s à s'appliquer.
+  invalidateOctoConfig();
+
   return NextResponse.json({ ok: true });
 }

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 // PATCH /api/tours/:id
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const body = await req.json();
-  const { name, category, duration, price, pricingMode, routeType, platforms, active, sortOrder } = body;
+  const { name, category, duration, price, pricingMode, routeType, platforms, active, sortOrder, octoEnabled, capacity, startTimes } = body;
 
   const tour = await prisma.tour.update({
     where: { id: params.id },
@@ -18,6 +18,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       ...(platforms !== undefined && { platforms: typeof platforms === "string" ? platforms : JSON.stringify(platforms) }),
       ...(active !== undefined && { active }),
       ...(sortOrder !== undefined && { sortOrder: Number(sortOrder) }),
+      ...(octoEnabled !== undefined && { octoEnabled: Boolean(octoEnabled) }),
+      ...(capacity !== undefined && { capacity: Math.max(1, Number(capacity) || 1) }),
+      ...(startTimes !== undefined && {
+        startTimes: typeof startTimes === "string" ? startTimes : JSON.stringify(startTimes),
+      }),
     },
   });
   return NextResponse.json(tour);

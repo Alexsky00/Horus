@@ -451,8 +451,17 @@ function SimulateOTA({ onCreated }: { onCreated: () => void }) {
 
   useEffect(() => {
     fetch("/api/tours")
-      .then(r => r.json())
-      .then(setAllTours);
+      .then(async r => {
+        if (!r.ok) {
+          console.error("GET /api/tours failed:", r.status, await r.text());
+          return [];
+        }
+        const text = await r.text();
+        if (!text) return [];
+        try { return JSON.parse(text); } catch { return []; }
+      })
+      .then(setAllTours)
+      .catch(err => { console.error("Erreur fetch /api/tours:", err); setAllTours([]); });
   }, []);
 
   // Tours available for the selected source platform

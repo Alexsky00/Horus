@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendPushToAll, sendEmailFallback } from "@/lib/push";
 import { writeLog } from "@/lib/log";
+import { occupyingBookingsWhere } from "@/lib/occupancy";
+import { expireStaleHolds } from "@/lib/octo/holds";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +13,9 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get("status");
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+
+  // Les holds abandonnés par une OTA ne doivent pas s'afficher comme des réservations vivantes.
+  await expireStaleHolds();
 
   const bookings = await prisma.booking.findMany({
     where: {
@@ -50,8 +55,9 @@ export async function POST(req: NextRequest) {
   const dayEnd = new Date(bookingDate);
   dayEnd.setHours(23, 59, 59, 999);
 
+  // Inclut les holds OCTO en cours : une OTA peut être en train de vendre ce créneau.
   const confirmedThatDay = await prisma.booking.findMany({
-    where: { status: "confirmed", date: { gte: dayStart, lte: dayEnd } },
+    where: { ...occupyingBookingsWhere(), date: { gte: dayStart, lte: dayEnd } },
   });
 
   // Chevauchement : [newStart, newEnd[ coupe [existingStart, existingEnd[

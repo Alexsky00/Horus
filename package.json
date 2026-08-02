@@ -1,6 +1,6 @@
 {
   "name": "horus",
-  "version": "1.8.1",
+  "version": "1.9.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,6 +8,14 @@
     "start": "next start",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
+    "octo:check": "node scripts/octo-check.js",
+    "sandbox:setup": "node scripts/sandbox.js setup",
+    "sandbox:clone": "node scripts/sandbox.js clone",
+    "sandbox:dev": "node scripts/sandbox.js dev",
+    "sandbox:check": "node scripts/sandbox.js check",
+    "sandbox:reset": "node scripts/sandbox.js reset",
+    "octo:simulate": "node scripts/octo-simulate.js --url http://localhost:3100 --key hor_sandbox_civitatis_key",
+    "octo:bench": "node scripts/octo-bench.js --url http://localhost:3100 --key hor_sandbox_civitatis_key",
     "generate:vapid": "node -e \"const webpush=require('web-push');const keys=webpush.generateVAPIDKeys();console.log('VAPID_PUBLIC_KEY='+keys.publicKey);console.log('VAPID_PRIVATE_KEY='+keys.privateKey);\""
   },
   "dependencies": {

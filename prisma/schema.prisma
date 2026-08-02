@@ -20,13 +20,30 @@ model Booking {
   nationality  String?  // ex: "FR"
   routeType    String?  // "corta" | "media" | "larga"
   allDay       Boolean  @default(false)
-  status       String   @default("pending") // "pending" | "confirmed" | "refused"
+  status       String   @default("pending") // "pending" | "confirmed" | "refused" | "conflict" | "on_hold" | "cancelled" | "expired"
   phone        String?  // téléphone du client
   notes        String?
   externalRef  String?  // référence OTA
   price        Float?   // revenu total de la réservation (€), null = non renseigné
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  // ── OCTO (réservations entrantes via l'API standard) ──
+  octoUuid       String?   @unique // uuid OCTO de la réservation
+  octoOptionId   String? // option OCTO retenue (toujours "DEFAULT" chez nous)
+  availabilityId String? // créneau OCTO réservé (datetime local ISO)
+  resellerRef    String? // référence côté revendeur (Civitatis, Viator…)
+  supplierRef    String? // notre référence lisible et unique (ex: "RCC-8F2K9A")
+  unitItems      String? // JSON des unités vendues (ADULT/CHILD…)
+  contactJson    String? // contact OCTO brut (locales, code postal… que Booking ne modélise pas)
+  holdExpiresAt  DateTime? // expiration du hold tant que status = "on_hold"
+  confirmedAt    DateTime?
+  cancelledAt    DateTime?
+  cancelReason   String?
+  testMode       Boolean   @default(false) // réservation de test d'un revendeur
+
+  @@index([date, status])
+  @@index([tourId, date])
 }
 
 model Tour {
@@ -41,6 +58,22 @@ model Tour {
   active      Boolean  @default(true)
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
+
+  // ── OCTO ──
+  octoEnabled Boolean @default(false) // exposé dans GET /octo/products
+  capacity    Int     @default(8) // places max par départ (départ collectif)
+  startTimes  String  @default("[\"09:00\"]") // JSON array des heures de départ locales
+}
+
+/// Clé d'API d'un revendeur OCTO (une clé unique par relation revendeur↔fournisseur)
+model ApiKey {
+  id         String    @id @default(cuid())
+  name       String // "Civitatis", "Viator"…
+  source     String    @default("civitatis") // source Horus associée, pour colorer la réservation
+  token      String    @unique
+  active     Boolean   @default(true)
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
 }
 
 model BlockedSlot {
